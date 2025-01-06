@@ -20,6 +20,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 import os.path
 import unittest
 from unittest.mock import patch, MagicMock
@@ -101,13 +111,18 @@ class DataServiceTest(unittest.TestCase):
     @patch('os.makedirs')  # Mock de os.makedirs
     @patch('app.services.data_service.DataService.download_data')  # Mock de download_data
     @patch('app.services.data_service.DataService.is_csv')  # Mock de is_csv
-    def test_import_data_success(self, mock_is_csv, mock_download_data, mock_makedirs):
+    @patch('app.services.data_service.DataService.merge_data')
+    @patch('app.services.data_service.DataService.send_music')
+    def test_import_data_success(self, mock_send_music, mock_merge_data, mock_is_csv, mock_download_data,
+                                 mock_makedirs):
         # Configuration des mocks
         tagger_dto = [
-            {"url": "https://example.com/file1.csv"},
-            {"url": "https://example.com/file2.csv"}
+            {"url": "https://example.com/file1.csv", "spotid": "id", "header": ["source1", "srouce3"]},
+            {"url": "https://example.com/file2.csv", "spotid": "id", "header": ["source1", "srouce3"]}
         ]
         mock_download_data.return_value = "./downloads/file1.csv"
+        mock_merge_data.return_value = "./downloads/file1.csv"
+        mock_send_music.return_value = True
         mock_is_csv.return_value = True
 
         # Création d'une instance de DataImporter
@@ -126,18 +141,22 @@ class DataServiceTest(unittest.TestCase):
     @patch('os.makedirs')  # Mock de os.makedirs
     @patch('app.services.data_service.DataService.download_data')  # Mock de download_data
     @patch('app.services.data_service.DataService.is_csv')  # Mock de is_csv
-    def test_import_data_with_non_csv_files(self, mock_is_csv, mock_download_data, mock_makedirs):
+    @patch('app.services.data_service.DataService.merge_data')
+    @patch('app.services.data_service.DataService.send_music')
+    def test_import_data_with_non_csv_files(self, mock_send_music, mock_merge_data, mock_is_csv, mock_download_data,
+                                            mock_makedirs):
         # Configuration des mocks
         tagger_dto = [
-            {"url": "https://example.com/file1.csv"},
-            {"url": "https://example.com/file2.txt"}  # Non-CSV
+            {"url": "https://example.com/file1.csv", "spotid": "id", "header": ["source1", "srouce3"]},
+            {"url": "https://example.com/file2.txt", "spotid": "id", "header": ["source1", "srouce3"]}  # Non-CSV
         ]
         mock_download_data.side_effect = [
             "/mock/folder/file1.csv",  # Téléchargement du fichier CSV
             "/mock/folder/file2.txt"  # Téléchargement d'un fichier non CSV
         ]
         mock_is_csv.side_effect = [True, False]  # Le premier fichier est un CSV, le second non
-
+        mock_merge_data.return_value = "./downloads/file1.csv"
+        mock_send_music.return_value = True
         # Création d'une instance de DataImporter
         data = DataService()
 
@@ -155,11 +174,16 @@ class DataServiceTest(unittest.TestCase):
     @patch('os.makedirs')  # Mock de os.makedirs
     @patch('app.services.data_service.DataService.download_data')  # Mock de download_data
     @patch('app.services.data_service.DataService.is_csv')  # Mock de is_csv
-    def test_import_data_with_failed_download(self, mock_is_csv, mock_download_data, mock_makedirs):
+    @patch('app.services.data_service.DataService.merge_data')
+    @patch('app.services.data_service.DataService.send_music')
+    def test_import_data_with_failed_download(self, mock_send_music, mock_merge_data, mock_is_csv, mock_download_data,
+                                              mock_makedirs):
         # Configuration des mocks pour simuler un échec du téléchargement
-        tagger_dto = [{"url": "https://example.com/file1.csv"}]
+        tagger_dto = [{"url": "https://example.com/file1.csv", "spotid": "id", "header": ["source1", "srouce3"]}]
         mock_download_data.return_value = None  # Simule un téléchargement échoué
         mock_is_csv.return_value = True  # Même si le fichier était un CSV, il n'a pas été téléchargé
+        mock_merge_data.return_value = "./downloads/file1.csv"
+        mock_send_music.return_value = True
 
         # Création d'une instance de DataImporter
         data = DataService()
