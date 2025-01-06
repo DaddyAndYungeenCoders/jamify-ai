@@ -10,17 +10,28 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
 from urllib.parse import urlparse
 
 import requests
+from requests import HTTPError
 
 from app.utils.logger import logger
 
 
 class DataService:
-    download_folder = "./downloads"
+    download_folder = os.path.join(".", "downloads")
 
     def import_data(self, tagger_dto):
         csv_files = []
@@ -44,6 +55,8 @@ class DataService:
             # Effectuer la requête HTTP pour obtenir le contenu du fichier
             response = requests.get(url)
             response.raise_for_status()  # Lève une exception si la requête échoue
+            if response.status_code != 200:
+                raise HTTPError
             # Extraire le nom du fichier à partir de l'URL
             file_name = os.path.basename(urlparse(url).path)
             file_path = os.path.join(self.download_folder, file_name)
@@ -53,6 +66,9 @@ class DataService:
                 file.write(response.content)
             logger.info(f"Fichier téléchargé : {file_path}")
             return file_path
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Erreur de téléchargement du fichier {url} : {e}")
+            return None
         except requests.exceptions.RequestException as e:
             logger.error(f"Erreur de téléchargement du fichier {url} : {e}")
             return None
