@@ -1,75 +1,102 @@
+from langdetect import detect
 import spacy
-from spacy_wordnet.wordnet_annotator import WordnetAnnotator
-from spacy.language import Language
+from googletrans import Translator
+from nltk.corpus import wordnet as wn
 import pandas as pd
 
-# Charger le modèle SpaCy
-nlp = spacy.load('en_core_web_sm')
+# Charger uniquement le modèle SpaCy en anglais
+SPACY_MODEL = spacy.load("en_core_web_sm")
 
-# Enregistrer WordnetAnnotator comme une factory Spacy
-@Language.factory("wordnet_annotator")
-def create_wordnet_annotator(nlp, name):
-    return WordnetAnnotator(nlp, name=name)  # Fournir 'name' à WordnetAnnotator
+# Créer un traducteur Google Translate
+translator = Translator()
 
-# Ajouter WordnetAnnotator à la pipeline NLP en utilisant le nom du composant enregistré
-nlp.add_pipe("wordnet_annotator", name="wordnet_annotator", last=True)
+def detect_language(text):
+    """
+    Détecte la langue d'un texte en utilisant `langdetect`.
+    Retourne le code de langue attendu, ici 'en' pour l'anglais.
+    """
+    try:
+        lang = detect(text)
+        return lang
+    except Exception:
+        return "en"  # Retourne "en" si la langue ne peut pas être détectée
+
+def translate_to_english(text, lang):
+    """
+    Traduit un texte dans la langue spécifiée vers l'anglais si nécessaire.
+    Utilise Google Translate pour effectuer la traduction.
+    """
+    if lang != "en":
+        # Traduire le mot-clé dans la langue anglaise si nécessaire
+        translated = translator.translate(text, src=lang, dest="en")
+        return translated.text
+    return text
+
+def find_synonyms(word):
+    """
+    Trouve les synonymes d'un mot en utilisant WordNet en anglais.
+    """
+    synonyms = set()
+    
+    # Recherche des synonymes uniquement en anglais
+    for synset in wn.synsets(word, lang="eng"):
+        for lemma in synset.lemmas("eng"):
+            synonyms.add(lemma.name().lower())
+
+    return synonyms
 
 class PlaylistService:
     @staticmethod
-    def generate_playlist(csv_file, user_input):
+    def generate_playlist(csv_file, keywords, number=None):
         """
-        Génère une playlist basée sur un mot-clé.
+        Génère une playlist basée sur un ou plusieurs mots-clés, en considérant tous les synonymes trouvés.
         """
         # Charger les données depuis le fichier CSV
         data = pd.read_csv(csv_file)
         tags = data['tag'].dropna().unique()
 
-        # Trouver les tags similaires
-        similar_tags = PlaylistService.find_similar_tags(user_input, tags)
-        print(f"tags : {similar_tags}")
+        # Trouver les tags similaires pour chaque mot-clé
+        similar_tags = set()
+        for keyword in keywords:
+            similar_tags.update(PlaylistService.find_similar_tags(keyword, tags))
 
-        # Filtrer les musiques avec des tags similaires
+        # Filtrer les musiques correspondant aux tags similaires (globalement)
         filtered_songs = data[data['tag'].isin(similar_tags)]
+
+        # Limiter le nombre de musiques seulement après avoir collecté tous les résultats
+        if number is not None:
+            filtered_songs = filtered_songs.head(number)
+
         return filtered_songs.to_dict(orient='records')
 
+    @staticmethod
     def find_similar_tags(user_input, tags):
         """
-        Trouve des tags similaires au mot-clé utilisateur en utilisant SpaCy et WordNet.
+        Trouve des tags similaires au mot-clé utilisateur en utilisant SpaCy et WordNet (si disponible).
         """
-        user_input_doc = nlp(user_input.lower())
+        lang = detect_language(user_input)  # Détecter la langue du mot-clé
+        print(f"Langue détectée pour '{user_input}': {lang}")
+
         synonyms = set()
+        
+        # Traduire l'entrée utilisateur en anglais
+        translated_input = translate_to_english(user_input, lang)
+        print(f"Mot-clé traduit en anglais : {translated_input}")
 
-        # Ajouter les synonymes du mot-clé utilisateur
-        for token in user_input_doc:
-            print(f"Token: {token.text}")  # Afficher les tokens traités
-            for synset in token._.wordnet.synsets():
-                print(f"Synset: {synset}")  # Afficher le synset associé
-                for lemma in synset.lemma_names():
-                    print(f"Lemma: {lemma}")  # Afficher chaque synonyme
-                    synonyms.add(lemma.lower())
+        # Trouver des synonymes en anglais
+        synonyms.update(find_synonyms(translated_input))
 
-                # Explorer les hypernyms et hyponymes
-                for hypernym in synset.hypernyms():
-                    for lemma in hypernym.lemma_names():
-                        synonyms.add(lemma.lower())
-                for hyponym in synset.hyponyms():
-                    for lemma in hyponym.lemma_names():
-                        synonyms.add(lemma.lower())
-
-        # Inclure le mot-clé lui-même
-        synonyms.add(user_input.lower())
-
-        print(f"Synonyms found: {synonyms}")  # Afficher tous les synonymes trouvés
+        # Inclure le mot-clé lui-même dans les synonymes
+        synonyms.add(translated_input.lower())
+        print(f"Synonymes trouvés : {synonyms}")
 
         similar_tags = []
-
         # Comparer les synonymes aux tags
         for tag in tags:
-            tag_doc = nlp(tag.lower())
+            tag_doc = SPACY_MODEL(tag.lower())
             for synonym in synonyms:
                 if synonym in tag_doc.text:
                     similar_tags.append(tag)
                     break
 
         return similar_tags
-
