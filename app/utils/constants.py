@@ -8,3 +8,4 @@ JSON_FIELDS = {
 
 # Configuration du modèle SpaCy
 SPACY_MODEL_NAME = "en_core_web_sm"
+TAG_FIELD = "tag"

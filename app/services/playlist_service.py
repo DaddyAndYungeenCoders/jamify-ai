@@ -4,7 +4,7 @@ import spacy
 from googletrans import Translator
 from nltk.corpus import wordnet as wn
 import pandas as pd
-from app.utils.constants import SPACY_MODEL_NAME
+from app.utils.constants import SPACY_MODEL_NAME, TAG_FIELD
 
 # Charger uniquement le modèle SpaCy en anglais
 SPACY_MODEL = spacy.load(SPACY_MODEL_NAME)
@@ -56,7 +56,7 @@ class PlaylistService:
         """
         # Charger les données depuis le fichier CSV
         data = pd.read_csv(csv_file)
-        tags = data['tag'].dropna().unique()
+        tags = data[TAG_FIELD].dropna().unique()
 
         # Trouver les tags similaires pour chaque mot-clé
         similar_tags = set()
