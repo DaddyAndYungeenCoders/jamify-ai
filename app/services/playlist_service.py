@@ -1,25 +1,28 @@
-from langdetect import detect
+import langid
+from flask import jsonify
 import spacy
 from googletrans import Translator
 from nltk.corpus import wordnet as wn
 import pandas as pd
+from app.utils.constants import SPACY_MODEL_NAME
 
 # Charger uniquement le modèle SpaCy en anglais
-SPACY_MODEL = spacy.load("en_core_web_sm")
+SPACY_MODEL = spacy.load(SPACY_MODEL_NAME)
 
 # Créer un traducteur Google Translate
 translator = Translator()
 
 def detect_language(text):
     """
-    Détecte la langue d'un texte en utilisant `langdetect`.
-    Retourne le code de langue attendu, ici 'en' pour l'anglais.
+    Détecte la langue d'un texte, même si c'est un seul mot.
+    Utilise langid pour la détection de langue.
     """
     try:
-        lang = detect(text)
+        # Détecter la langue avec langid
+        lang, _ = langid.classify(text)
         return lang
-    except Exception:
-        return "en"  # Retourne "en" si la langue ne peut pas être détectée
+    except Exception as e:
+        return jsonify({"error": f"Langue non prise en charge. {str(e)}"}), 400
 
 def translate_to_english(text, lang):
     """
