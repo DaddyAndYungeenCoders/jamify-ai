@@ -60,6 +60,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 from flask import Blueprint
 
@@ -72,23 +82,5 @@ main_blueprint = Blueprint('main', __name__)
 
 # Enregistrer les blueprints dans le blueprint principal
 main_blueprint.register_blueprint(data_controller, url_prefix='/tag')
-stomp_controller_inner = StompController()
 
-
-def add_subscribe(topic, callback):
-    """Souscrire à un topic via le StompController"""
-    stomp = stomp_controller_inner
-    stomp.add_subscriber(topic, callback)
-
-
-def remove_subscribe(topic):
-    """Retirer l'abonnement à un topic"""
-    stomp = stomp_controller_inner
-    stomp.remove_subscriber(topic)
-
-
-def send_message(topic, message):
-    """Envoyer un message sur un topic"""
-    stomp = stomp_controller_inner
-    stomp.send_message(topic, message)
-
+stomp = StompController()
