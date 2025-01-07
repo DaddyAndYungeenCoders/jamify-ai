@@ -21,27 +21,12 @@
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
 
-import logging
+from unittest import TestCase
 
-import colorlog
-
-
-def setup_logger():
-    log = logging.getLogger('jamify-ai-app')
-    log.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler()
-    log_format = '%(log_color)s%(asctime)s-%(name)s-%(levelname)s: %(message)s'
-    log_colors = {
-        'DEBUG': 'cyan',
-        'INFO': 'green',
-        'WARNING': 'yellow',
-        'ERROR': 'red',
-        'CRITICAL': 'magenta',
-    }
-    formatter = colorlog.ColoredFormatter(log_format, log_colors=log_colors)
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
-    return log
+from app import create_app
 
 
-logger = setup_logger()
+class Test(TestCase):
+    def test_create_app(self):
+        result = create_app()
+        self.assertEqual(result.name, "app")
