@@ -3,3 +3,4 @@ marshmallow~=3.23.2
 requests~=2.32.0
 colorlog~=6.9.0
 stomp.py~=8.2.0
+pandas~=2.2.3
