@@ -75,6 +75,7 @@ from flask import Blueprint
 
 # Importer les contrôleurs spécifiques
 from .data_controller import data_controller
+from .playlist_controller import playlist_controller
 from .stomp_controller import StompController
 
 # Créer le Blueprint principal qui va regrouper tous les autres blueprints
@@ -82,5 +83,7 @@ main_blueprint = Blueprint('main', __name__)
 
 # Enregistrer les blueprints dans le blueprint principal
 main_blueprint.register_blueprint(data_controller, url_prefix='/tag')
+main_blueprint.register_blueprint(playlist_controller, url_prefix='/playlist')
+
 
 stomp = StompController()
