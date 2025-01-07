@@ -20,208 +20,112 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-import os.path
+import os
 import unittest
 from unittest.mock import patch, MagicMock
 
+import pandas as pd
 import requests
 
-from app.services.data_service import DataService
+from app.services.data_service import DataService, CsvFile
 
 
-class DataServiceTest(unittest.TestCase):
-    @patch('app.services.data_service.controllers.stomp')
-    def setUp(self, mock_stomp):
-        pass
+class TestDataService(unittest.TestCase):
 
+    def setUp(self):
+        self.data_service = DataService()
+        self.test_url = "http://example.com/test.csv"
+        self.test_spot_id = "spot123"
+        self.test_header = ["header1", "header2"]
+        self.test_csv_file_path = os.path.join(".", "downloads", "test.csv")
 
+        # Créer un dossier de test pour les téléchargements
+        os.makedirs(self.data_service.download_folder, exist_ok=True)
 
-    def test_isCsv_valid(self):
-        result = DataService.is_csv("folder.csv")
-        self.assertEqual(True, result)  # add assertion here
-
-    def test_isCsv_wrong(self):
-        result = DataService.is_csv("folder.xml")
-        self.assertEqual(False, result)  # add assertion here
-
-    @patch('requests.get')  # Mock de requests.get
-    @patch('builtins.open', new_callable=unittest.mock.mock_open)  # Mock de open
-    def test_download_data_success(self, mock_open, mock_get):
-        # Configuration du mock pour requests.get
-        url = "https://example.com/file.csv"
+    @patch('app.controllers.stomp')
+    @patch('app.utils.logger.logger')  # Assurez-vous que ce chemin est correct
+    @patch('requests.get')
+    def test_import_data_success(self, mock_requests_get, mock_logger, mock_stomp):
+        # Simuler la réponse de la requête HTTP
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.content = b"file content"
-        mock_get.return_value = mock_response
+        mock_response.content = b"header1,header2\nvalue1,value2"
+        mock_requests_get.return_value = mock_response
 
-        # Création d'une instance de DataDownloader
-        data = DataService()
-        # Appel de la méthode
-        file_path = data.download_data(url=url)
+        # Simuler la connexion STOMP
+        mock_stomp.connected.return_value = None
 
-        # Vérifications
-        self.assertEqual(file_path, os.path.join(".", "downloads", "file.csv"))
-        mock_get.assert_called_once_with(url)  # Vérifier que requests.get a été appelé une seule fois
-        mock_open.assert_called_once_with(os.path.join(".", "downloads", "file.csv"),
-                                          'wb')  # Vérifier que open a été appelé avec le bon chemin
-        mock_open().write.assert_called_once_with(
-            b"file content")  # Vérifier que le contenu a été écrit dans le fichier
-
-    @patch('requests.get')  # Mock de requests.get
-    @patch('builtins.open', new_callable=unittest.mock.mock_open)  # Mock de open
-    def test_download_data_http_error(self, mock_open, mock_get):
-        # Configuration du mock pour simuler une erreur HTTP (par exemple, 404)
-        url = "https://example.com/file_not_found.csv"
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_get.return_value = mock_response
-
-        # Création d'une instance de DataDownloader
-        data = DataService()
-        # Appel de la méthode
-        file_path = data.download_data(url=url)
-
-        # Vérifications
-        self.assertIsNone(file_path)  # La méthode doit retourner None en cas d'erreur HTTP
-        mock_get.assert_called_once_with(url)  # Vérifier que requests.get a été appelé une seule fois
-        mock_open.assert_not_called()  # open ne doit pas être appelé si le téléchargement échoue
-
-    @patch('requests.get')  # Mock de requests.get
-    @patch('builtins.open', new_callable=unittest.mock.mock_open)  # Mock de open
-    def test_download_data_request_exception(self, mock_open, mock_get):
-        # Configuration du mock pour simuler une exception de requête (par exemple, Timeout)
-        url = "https://example.com/file.txt"
-        mock_get.side_effect = requests.exceptions.RequestException("Network error")
-
-        # Création d'une instance de DataDownloader
-        data = DataService()
+        tagger_dto = [{'url': self.test_url, 'spotid': self.test_spot_id, 'header': self.test_header}]
 
         # Appel de la méthode
-        file_path = data.download_data(url=url)
+        self.data_service.import_data(tagger_dto)
 
-        # Vérifications
-        self.assertIsNone(file_path)  # La méthode doit retourner None en cas d'exception de requête
-        mock_get.assert_called_once_with(url)  # Vérifier que requests.get a été appelé une seule fois
-        mock_open.assert_not_called()  # open ne doit pas être appelé si une exception est levée
+        # Assertions
+        mock_requests_get.assert_called_once_with(self.test_url)
+        self.assertTrue(os.path.exists(self.test_csv_file_path))
 
+        # Vérifier que le fichier CSV a été lu et fusionné
+        merged_df = pd.read_csv(self.test_csv_file_path)
+        self.assertEqual(merged_df.shape[0], 1)  # Vérifie qu'il y a une ligne dans le DataFrame
 
-#    @patch('os.makedirs')  # Mock de os.makedirs
-#    @patch('app.services.data_service.DataService.download_data')  # Mock de download_data
-#    @patch('app.services.data_service.DataService.is_csv')  # Mock de is_csv
-#    @patch('app.services.data_service.pd.read_csv')  # Mock pd.read_csv
-#    @patch('app.services.data_service.controllers.stomp')  # Mock le stomp_controller
-#    @patch('app.services.data_service.DataService.send_music')
-#    def test_import_data_success(self,mock_send_msg,mock_stomp, mock_read_csv, mock_is_csv, mock_download_data,
-#                                 mock_makedirs):
-#        # Préparer les mocks
-#        mock_stomp.connected = MagicMock()
-#        mock_stomp.send_message = MagicMock()
-#        # Configuration des mocks
-#        tagger_dto = [
-#            {"url": "https://example.com/file1.csv", "spotid": "id", "header": ["source1", "srouce3"]},
-#            {"url": "https://example.com/file2.csv", "spotid": "id", "header": ["source1", "srouce3"]}
-#        ]
-#        mock_download_data.return_value = "./downloads/file1.csv"
-#        # Simuler la lecture du CSV
-#        mock_df = MagicMock()
-#        mock_df.iterrows.return_value = iter([(0, {'col1': 1, 'col2': 2}), (1, {'col1': 3, 'col2': 4})])
-#        mock_read_csv.return_value = mock_df  # Assurez-vous que mock_read_csv retourne un DataFrame valide
-#
-#        mock_send_msg.return_value = MagicMock()
-#
-#        mock_is_csv.return_value = True
-#
-#        # Création d'une instance de DataImporter
-#        data = DataService()
-#
-#        # Appel de la méthode import_data
-#        data.import_data(tagger_dto)
-#
-#        # Vérifications
-#        mock_makedirs.assert_called_once_with(data.download_folder, exist_ok=True)  # Vérifier que le dossier a été créé
-#        mock_download_data.assert_any_call("https://example.com/file2.csv")
-#        mock_download_data.assert_any_call(
-#            "https://example.com/file1.csv")  # Vérifier que download_data est appelé pour chaque fichier
-#        mock_is_csv.assert_any_call("./downloads/file1.csv")  # Vérifier que is_csv est appelé pour chaque fichier
-#
-#    @patch('os.makedirs')  # Mock de os.makedirs
-#    @patch('app.services.data_service.DataService.download_data')  # Mock de download_data
-#    @patch('app.services.data_service.DataService.is_csv')  # Mock de is_csv
-#    @patch('app.services.data_service.DataService.merge_data')
-#    @patch('app.services.data_service.DataService.send_music')
-#    def test_import_data_with_non_csv_files(self, mock_send_music, mock_merge_data, mock_is_csv, mock_download_data,
-#                                            mock_makedirs):
-#        # Configuration des mocks
-#        tagger_dto = [
-#            {"url": "https://example.com/file1.csv", "spotid": "id", "header": ["source1", "srouce3"]},
-#            {"url": "https://example.com/file2.txt", "spotid": "id", "header": ["source1", "srouce3"]}  # Non-CSV
-#        ]
-#        mock_download_data.side_effect = [
-#            "/mock/folder/file1.csv",  # Téléchargement du fichier CSV
-#            "/mock/folder/file2.txt"  # Téléchargement d'un fichier non CSV
-#        ]
-#        mock_is_csv.side_effect = [True, False]  # Le premier fichier est un CSV, le second non
-#        mock_merge_data.return_value = "./downloads/file1.csv"
-#        mock_send_music.return_value = True
-#        # Création d'une instance de DataImporter
-#        data = DataService()
-#
-#        # Appel de la méthode import_data
-#        data.import_data(tagger_dto)
-#
-#        # Vérifications
-#        mock_makedirs.assert_called_once_with(data.download_folder, exist_ok=True)  # Vérifier que le dossier a été créé
-#        mock_download_data.assert_any_call("https://example.com/file1.csv")
-#        mock_download_data.assert_any_call("https://example.com/file2.txt")
-#        mock_is_csv.assert_any_call("/mock/folder/file1.csv")
-#        mock_is_csv.assert_any_call("/mock/folder/file2.txt")
-#        # Vérifier que seul le fichier CSV est ajouté à csv_files
-#
-#    @patch('os.makedirs')  # Mock de os.makedirs
-#    @patch('app.services.data_service.DataService.download_data')  # Mock de download_data
-#    @patch('app.services.data_service.DataService.is_csv')  # Mock de is_csv
-#    @patch('app.services.data_service.DataService.merge_data')
-#    @patch('app.services.data_service.DataService.send_music')
-#    def test_import_data_with_failed_download(self, mock_send_music, mock_merge_data, mock_is_csv, mock_download_data,
-#                                              mock_makedirs):
-#        # Configuration des mocks pour simuler un échec du téléchargement
-#        tagger_dto = [{"url": "https://example.com/file1.csv", "spotid": "id", "header": ["source1", "srouce3"]}]
-#        mock_download_data.return_value = None  # Simule un téléchargement échoué
-#        mock_is_csv.return_value = True  # Même si le fichier était un CSV, il n'a pas été téléchargé
-#        mock_merge_data.return_value = "./downloads/file1.csv"
-#        mock_send_music.return_value = True
-#
-#        # Création d'une instance de DataImporter
-#        data = DataService()
-#
-#        # Appel de la méthode import_data
-#        data.import_data(tagger_dto)
-#
-#        # Vérifications
-#        mock_makedirs.assert_called_once_with(data.download_folder, exist_ok=True)  # Vérifier que le dossier a été créé
-#        mock_download_data.assert_called_with("https://example.com/file1.csv")  # Vérifier que download_data est appelé
-#        mock_is_csv.assert_not_called()  # is_csv ne doit pas être appelé si le téléchargement a échoué
-#        # Vérifier que csv_files reste vide
+    @patch('app.utils.logger.logger')  # Assurez-vous que ce chemin est correct
+    @patch('requests.get')
+    def test_download_data_http_error(self, mock_requests_get, mock_logger):
+        # Simuler une erreur HTTP
+        mock_requests_get.side_effect = requests.exceptions.HTTPError("HTTP Error")
+
+        result = self.data_service.download_data(self.test_url)
+
+        # Assertions
+        self.assertIsNone(result)
+
+    @patch('app.utils.logger.logger')  # Assurez-vous que ce chemin est correct
+    @patch('requests.get')
+    def test_download_data_request_exception(self, mock_requests_get, mock_logger):
+        # Simuler une exception de requête
+        mock_requests_get.side_effect = requests.exceptions.RequestException("Request Error")
+
+        result = self.data_service.download_data(self.test_url)
+
+        # Assertions
+        self.assertIsNone(result)
+
+    def test_is_csv(self):
+        self.assertTrue(self.data_service.is_csv("file.csv"))
+        self.assertFalse(self.data_service.is_csv("file.txt"))
+
+    @patch('pandas.read_csv')
+    @patch('app.utils.logger.logger')  # Assurez-vous que ce chemin est correct
+    def test_merge_data(self, mock_logger, mock_read_csv):
+        # Simuler les fichiers CSV
+        mock_read_csv.side_effect = [
+            pd.DataFrame({'header1': ['value1'], 'header2': ['value2']}),
+            pd.DataFrame({'spot123': ['value1'], 'header3': ['value3']})
+        ]
+
+        csv_files = [CsvFile("file1.csv", "header1", []), CsvFile("file2.csv", "spot123", [])]
+        merged_df = self.data_service.merge_data(csv_files)
+
+        # Assertions
+        self.assertEqual(merged_df.shape[0], 1)  # Vérifie qu'il y a une ligne dans le DataFrame fusionné
+        mock_read_csv.assert_any_call("file1.csv")
+        mock_read_csv.assert_any_call("file2.csv")
+
+    @patch('app.utils.logger.logger')  # Assurez-vous que ce chemin est correct
+    @patch('requests.get')
+    def test_send_music(self, mock_requests_get, mock_logger):
+        # Simuler un DataFrame de musique
+        df = pd.DataFrame({'music_id': [1], 'title': ['Test Song']})
+
+        # Simuler la connexion STOMP
+        self.data_service.stomp_controller = MagicMock()
+        self.data_service.stomp_controller.connected.return_value = None
+
+        # Appel de la méthode
+        self.data_service.send_music(df)
+
+        # Assertions
+        self.data_service.stomp_controller.connected.assert_called_once()  # Vérifie que la connexion a été appelée
 
 
 if __name__ == '__main__':

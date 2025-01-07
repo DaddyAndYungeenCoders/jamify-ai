@@ -21,6 +21,7 @@
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
 
+
 import logging
 
 import colorlog
