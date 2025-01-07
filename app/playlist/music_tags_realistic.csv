@@ -1,0 +1,101 @@
+id,title,author,tag
+1,Livin' on a Prayer,Taylor Swift,"dance, energetic, upbeat, sad"
+2,We Will Rock You,Bon Jovi,"energetic, chill, relaxing, romantic"
+3,Bad Guy,John Legend,"upbeat, romantic, melancholic"
+4,Born to Run,Adele,"relaxing, calm"
+5,Believer,Guns N' Roses,"energetic, romantic, upbeat"
+6,Thriller,Queen,"dance, relaxing"
+7,Levitating,Luis Fonsi,relaxing
+8,Blinding Lights,Lady Gaga,energetic
+9,Thinking Out Loud,Sam Smith,"sad, romantic"
+10,All of Me,OneRepublic,"sad, relaxing"
+11,Dancing Queen,Bryan Adams,"dance, romantic"
+12,Livin' on a Prayer,Queen,"romantic, relaxing"
+13,Despacito,Dua Lipa,"dance, upbeat"
+14,Rockabye,Pharrell Williams,"upbeat, relaxing, energetic, romantic"
+15,Photograph,Imagine Dragons,"melancholic, happy, relaxing"
+16,I Will Survive,Coldplay,chill
+17,Livin' on a Prayer,Guns N' Roses,"happy, relaxing, chill"
+18,Eye of the Tiger,Camila Cabello,"melancholic, romantic"
+19,Hotel California,Guns N' Roses,calm
+20,Halo,Taylor Swift,"energetic, chill, calm, romantic"
+21,Shape of You,Led Zeppelin,"dance, romantic, upbeat"
+22,Hey Jude,John Legend,"sad, dance, energetic, calm"
+23,Happy,Pharrell Williams,"chill, romantic"
+24,Dance Monkey,Bon Jovi,melancholic
+25,Old Town Road,Pharrell Williams,"happy, upbeat, energetic, dance"
+26,Senorita,Billie Eilish,"chill, upbeat, romantic, melancholic"
+27,Senorita,The Weeknd,"upbeat, romantic"
+28,Rolling in the Deep,Katy Perry,romantic
+29,Smooth Criminal,Bruno Mars,"upbeat, energetic"
+30,Imagine,Rihanna,"romantic, chill"
+31,Happy,Rihanna,"sad, calm, relaxing"
+32,Uptown Funk,Maroon 5,"upbeat, happy"
+33,Thinking Out Loud,The Beatles,"sad, energetic, calm"
+34,Cheap Thrills,Camila Cabello,"romantic, happy, sad"
+35,Photograph,Maroon 5,"relaxing, happy, upbeat, romantic"
+36,Shallow,Queen,"melancholic, chill"
+37,Believer,Sia,"romantic, dance, energetic, upbeat"
+38,Thriller,Coldplay,"energetic, sad, dance"
+39,Smooth Criminal,Bon Jovi,"dance, calm"
+40,Happy,Adele,"chill, calm, happy"
+41,Cheap Thrills,OneRepublic,"melancholic, relaxing, dance"
+42,Rolling in the Deep,Rihanna,"calm, upbeat, dance"
+43,Shallow,Ed Sheeran,"energetic, chill, romantic, upbeat"
+44,Stay With Me,Coldplay,"romantic, dance, happy"
+45,Believer,Bon Jovi,"relaxing, energetic, upbeat, dance"
+46,Summer of '69,Katy Perry,"calm, relaxing, sad"
+47,Toxic,John Legend,"melancholic, upbeat, dance, romantic"
+48,Wonderwall,OneRepublic,"happy, chill, dance"
+49,Stay With Me,Rihanna,"relaxing, melancholic"
+50,Born to Run,Queen,"chill, upbeat, dance, happy"
+51,Bad Guy,John Legend,"chill, sad, romantic, upbeat"
+52,Don't Stop Believin',Bruno Mars,"calm, upbeat, relaxing"
+53,Stay With Me,Pharrell Williams,calm
+54,Senorita,Michael Jackson,"sad, energetic"
+55,Hey Jude,Luis Fonsi,"romantic, melancholic"
+56,Hey Jude,Led Zeppelin,"chill, melancholic, upbeat"
+57,Believer,ABBA,"calm, sad"
+58,Toxic,Rihanna,romantic
+59,Bad Guy,Taylor Swift,"chill, happy"
+60,Memories,Michael Jackson,"sad, upbeat, relaxing"
+61,Hey Jude,Bon Jovi,calm
+62,Shake It Off,Bon Jovi,"calm, romantic"
+63,Halo,Queen,"energetic, chill, dance"
+64,Perfect,Ed Sheeran,happy
+65,Shape of You,Billie Eilish,"sad, chill"
+66,Born to Run,Luis Fonsi,"calm, melancholic"
+67,Someone Like You,Luis Fonsi,"sad, energetic, happy, romantic"
+68,Halo,Sia,upbeat
+69,Thinking Out Loud,Luis Fonsi,"sad, dance, calm"
+70,Believer,The Weeknd,"melancholic, dance"
+71,Stairway to Heaven,Journey,"sad, chill, dance, happy"
+72,Levitating,Led Zeppelin,happy
+73,Roar,Adele,romantic
+74,We Will Rock You,Sia,"chill, happy"
+75,Dance Monkey,Pharrell Williams,"happy, dance, calm, melancholic"
+76,Smooth Criminal,The Beatles,romantic
+77,Counting Stars,Bon Jovi,"romantic, chill"
+78,Hey Jude,Journey,"happy, melancholic, upbeat"
+79,Hotel California,The Weeknd,calm
+80,Bad Guy,Dua Lipa,sad
+81,Thunder,Lil Nas X,"relaxing, melancholic"
+82,Someone Like You,Michael Jackson,upbeat
+83,Blinding Lights,Maroon 5,"chill, upbeat, sad"
+84,Stairway to Heaven,John Legend,"upbeat, calm, romantic"
+85,Happy,Imagine Dragons,"relaxing, dance"
+86,Shake It Off,John Legend,"chill, calm, upbeat"
+87,Old Town Road,John Legend,"calm, sad, upbeat"
+88,Shallow,Sam Smith,"chill, happy, relaxing"
+89,Eye of the Tiger,Dua Lipa,energetic
+90,I Will Survive,Queen,"upbeat, romantic"
+91,Thriller,Adele,"upbeat, melancholic"
+92,Thinking Out Loud,Katy Perry,"upbeat, melancholic"
+93,Beat It,Michael Jackson,dance
+94,Hey Jude,Sam Smith,"romantic, energetic"
+95,Dance Monkey,Lady Gaga,"romantic, chill, upbeat, melancholic"
+96,I Will Survive,Sam Smith,"dance, energetic, calm, chill"
+97,Sorry,Adele,"romantic, calm, upbeat, energetic"
+98,Let It Be,OneRepublic,"romantic, calm"
+99,Imagine,Sia,"calm, happy, sad, relaxing"
+100,Livin' on a Prayer,Michael Jackson,"sad, romantic"
