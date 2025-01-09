@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from app.services.playlist_service import PlaylistService
-from app.utils.constants import JSON_FIELDS
 from app.controllers.stomp_controller import StompController
 
 playlist_controller = Blueprint('playlist_controller', __name__)
@@ -21,7 +20,7 @@ def generate_playlist():
         user_id = data['userId']
         job_data = data['data']
 
-                # Validation des données internes
+        # Validation des données internes
         if 'tags' not in job_data or 'numberOfTitle' not in job_data:
             return jsonify({"error": "Les champs 'tags' et 'numberOfTitle' sont requis dans 'data'."}), 400
 
@@ -38,19 +37,9 @@ def generate_playlist():
         if not isinstance(number_of_titles, int):
             return jsonify({"error": "'numberOfTitle' doit être un entier."}), 400
 
-
-
-
         # Appel au service de génération de playlist
         csv_file = "app/playlist/music_tags_realistic.csv"
-        playlist = PlaylistService.generate_playlist(csv_file, keywords, number_of_titles)
-
-        # Construction de la réponse
-        playlist_end_job = {
-            "id": job_id,
-            "userId": user_id,
-            "data": [{"idMusic": song['id']} for song in playlist]
-        }
+        playlist_end_job = PlaylistService.generate_playlist(csv_file, keywords, number_of_titles, job_id, user_id)
 
         # Envoi de la réponse dans la queue STOMP
         destination = "/queue/playlist"  # Nom de la queue STOMP
