@@ -20,47 +20,7 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-
+import os
 import random as rand
 
 import stomp
@@ -76,10 +36,11 @@ class StompListener(stomp.ConnectionListener):
         logger.error('received an error "%s"' % frame.body)
 
     def on_message(self, frame):
-        logger.debug('received a message : "%s"' % frame.body)
+        body = frame.body
+        logger.debug('received a message : "%s"' % body)
         for subscriber in self.connection.list_subscribers:
             if subscriber.str_id() == str(frame.headers['subscription']):
-                subscriber.listener(frame.body)
+                subscriber.listener(body)
                 break
         pass
 
@@ -93,17 +54,18 @@ class StompController:
 
     def __init__(self):
         self.stomp_client = None
-        self.connection = stomp.Connection([("localhost", 61613)])
+        self.connection = stomp.Connection([(os.environ.get('QUEHOST') or "", int(os.environ.get('QUEPORT') or 61613))])
         self.connection.set_listener('', StompListener(self))
         # self.connected()
 
     def connected(self):
-        self.connection.connect('myuser', 'mypwd', wait=True)
+        self.connection.connect(os.environ['QUEUSER'], os.environ['QUEPASS'], wait=True)
         logger.info('Stomp client connected')
         for subscriber in self.list_subscribers:
             self.connection.subscribe(destination=subscriber.destination, id=subscriber.str_id(), ack='auto')
 
     def add_subscriber(self, queues_name, listener):
+        logger.debug('Add subscribe to queue : %s' % queues_name)
         subscriber = Subscriber(queues_name, listener)
         self.list_subscribers.append(subscriber)
         self.connection.subscribe(destination=subscriber.destination, id=subscriber.str_id(), ack='auto')

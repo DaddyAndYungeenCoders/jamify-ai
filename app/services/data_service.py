@@ -21,6 +21,7 @@
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
 
+
 import os
 from urllib.parse import urlparse
 
@@ -82,12 +83,12 @@ class DataService:
             logger.error(f"Erreur de téléchargement du fichier {url} : {e}")
             return None
 
-    def merge_data(self, csv_files):
+    @staticmethod
+    def merge_data(csv_files):
         """
             Fusionne plusieurs fichiers CSV en les croisant sur les colonnes spécifiées dans `merge_columns`.
 
-            :param files: Liste de chemins vers les fichiers CSV
-            :param merge_columns: Liste des colonnes à utiliser pour la fusion, indexées selon l'ordre des fichiers
+            :param csv_files:
             :return: DataFrame fusionné
             """
         # Lire le premier fichier CSV

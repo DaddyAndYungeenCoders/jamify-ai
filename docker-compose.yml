@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+    ports:
+      - "5000:5000"
+    environment:
+      DBHOST: db
+      DBNAME: jamify
+      DBUSER: admin
+      DBPASS: admin
+      QUEHOST: activemq
+      QUEPORT: "61613"
+      QUEUSER: admin
+      QUEPASS: admin
+    depends_on:
+      - db
+      - activemq
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: jamify
+    ports:
+      - "5432:5432" # Admin console
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  activemq:
+    image: symptoma/activemq:5.18.3
+    ports:
+      - "8161:8161" # Admin console
+    environment:
+      ACTIVEMQ_ADMIN_LOGIN: admin
+      ACTIVEMQ_ADMIN_PASSWORD: admin
+      ACTIVEMQ_WEBADMIN_USERNAME: admin
+      ACTIVEMQ_WEBADMIN_PASSWORD: admin
