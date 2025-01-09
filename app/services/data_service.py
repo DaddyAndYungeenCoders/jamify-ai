@@ -20,9 +20,20 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 
 import os
+import time
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -30,6 +41,7 @@ import requests
 from requests import HTTPError
 
 from app import controllers
+from app.controllers.stomp_controller import StompMultipleSend
 from app.utils.logger import logger
 
 
@@ -39,7 +51,6 @@ class DataService:
 
     def import_data(self, tagger_dto):
         self.stomp_controller = controllers.stomp
-        self.stomp_controller.connected()
         csv_files = []
         os.makedirs(self.download_folder, exist_ok=True)
         # Télécharger et vérifier chaque fichier
@@ -104,10 +115,12 @@ class DataService:
         return merged_df
 
     def send_music(self, merged_df):
-        self.stomp_controller.connected()
+        commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
         for index, row in merged_df.iterrows():
-            self.stomp_controller.send_message("com.jamify.ai.tag-gen", row.to_json())
-        pass
+            commit.send(row.to_json())
+            time.sleep(0.01)
+        del commit
+
 
 
 class CsvFile:

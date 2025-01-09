@@ -26,7 +26,4 @@ ENV QUEPORT=616162
 ENV QUEUSER=admin
 ENV QUEPASS=admin
 
-EXPOSE 5000
-
-
 CMD python3 run.py
