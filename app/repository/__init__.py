@@ -20,6 +20,7 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+
 import os
 
 import psycopg2
@@ -46,7 +47,7 @@ class Repository:
             'port': 5432,
             'host': host
         }
-        logger.debug("Connecting to Postgre with : %s", pg_connection_dict)
+        # logger.debug("Connecting to Postgre with : %s", pg_connection_dict)
         try:
             # connecting to the PostgreSQL server
             with psycopg2.connect(**pg_connection_dict) as conn:
@@ -61,4 +62,4 @@ class Repository:
         """ Disconnect from the PostgreSQL database server """
         if self.connection:
             self.connection.close()
-            logger.info('Database connection closed.')
+            #logger.info('Database connection closed.')

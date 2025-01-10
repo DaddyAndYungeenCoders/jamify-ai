@@ -20,6 +20,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 from datetime import datetime
 
 from marshmallow import fields, Schema, post_load
@@ -60,5 +70,11 @@ class QueueMusicTagDTO(Schema):
         # Convertir 'updated_on' en chaîne de caractères si elle est présente
         if 'updated_on' in data and isinstance(data['updated_on'], datetime):
             data['updated_on'] = data['updated_on'].isoformat()  # Convertir en format ISO 8601
+
+        if 'key' in data and isinstance(data['key'], str):
+            data['key'] = int(data['key'])
+
+        if 'mode' in data and isinstance(data['mode'], str):
+            data['mode'] = int(data['mode'])
 
         return data

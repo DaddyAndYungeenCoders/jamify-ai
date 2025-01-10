@@ -20,20 +20,8 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-
-
+import gc
 import os
-import time
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -96,30 +84,46 @@ class DataService:
 
     @staticmethod
     def merge_data(csv_files):
-        """
-            Fusionne plusieurs fichiers CSV en les croisant sur les colonnes spécifiées dans `merge_columns`.
+        """Fusionne les fichiers CSV en optimisant la mémoire."""
+        all_chunks = []
+        logger.info("Start merging data")
+        for csv_file in csv_files:
+            chunks = pd.read_csv(csv_file.file_path, chunksize=10000,
+                                 dtype={'spot_id': 'int32'})  # Optimisation type dès la lecture
+            all_chunks.append(list(chunks))
 
-            :param csv_files:
-            :return: DataFrame fusionné
-            """
-        # Lire le premier fichier CSV
-        logger.info(csv_files[0].file_path)
-        merged_df = pd.read_csv(csv_files[0].file_path)
+        merged_chunks = []
+        first_file_chunks = all_chunks[0]
 
-        # Fusionner chaque fichier suivant en fonction des colonnes de fusion spécifiées
-        for i, csv_file in enumerate(csv_files[1:]):
-            df = pd.read_csv(csv_file.file_path)
-            column_to_merge_on = csv_file.spot_id  # La colonne de fusion est spécifiée pour chaque fichier
-            merged_df = pd.merge(merged_df, df, left_on=csv_files[0].spot_id, right_on=column_to_merge_on, how='inner')
+        for i, file_chunks in enumerate(all_chunks[1:]):
+            for chunk1 in first_file_chunks:
+                for chunk2 in file_chunks:
+                    chunk2 = chunk2.loc[:, ~chunk2.columns.duplicated()]
+                    merged_chunk = pd.merge(chunk1, chunk2, left_on=csv_files[0].spot_id,
+                                            right_on=csv_files[i + 1].spot_id, how='outer')
+                    merged_chunks.append(merged_chunk)
+                    del chunk2  # Supprime chunk2 explicitement après utilisation
+                    gc.collect()  # Force le garbage collector
+            first_file_chunks = merged_chunks
+            merged_chunks = []
+            gc.collect()
 
-        return merged_df
+        final_df = pd.concat(first_file_chunks, ignore_index=True)
+        logger.info("All data is merged")
+        return final_df
 
     def send_music(self, merged_df):
-        commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
-        for index, row in merged_df.iterrows():
-            commit.send(row.to_json())
-            time.sleep(0.01)
-        del commit
+        chunk_size = 500
+        logger.info("Start send data to Active MQ")
+        for start in range(0, len(merged_df), chunk_size):
+            chunk = merged_df.iloc[start:start + chunk_size]
+            commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
+            for index, row in chunk.iterrows():  # itertuples est plus rapide que iterrows, mais pour la conversion json, il faut rester en iterrows
+                commit.send(row.to_json())
+            del commit, chunk
+            gc.collect()
+            logger.debug("data add to queue: %s", start + chunk_size)
+        logger.info("All data is send to Active MQ")
 
 
 
