@@ -2,6 +2,8 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 from app.services.playlist_service import PlaylistService
+import nltk
+nltk.download('wordnet')
 
 class TestPlaylistService(unittest.TestCase):
 
