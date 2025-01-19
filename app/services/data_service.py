@@ -10,17 +10,7 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-import gc
+
 import os
 from urllib.parse import urlparse
 
@@ -29,6 +19,7 @@ import requests
 from requests import HTTPError
 
 from app import controllers
+from app.controllers import stomp_controller
 from app.controllers.stomp_controller import StompMultipleSend
 from app.utils.logger import logger
 
@@ -47,8 +38,17 @@ class DataService:
             file_path = self.download_data(dataset['url'])
             if file_path and self.is_csv(file_path):
                 csv_files.append(CsvFile(file_path, dataset['spotid'], dataset['header']))
-        df_data = self.merge_data(csv_files)
-        self.send_music(df_data)
+
+        try:
+            # Merge des fichiers
+            df_data = self.merge_data(csv_files)
+
+            # Envoi via STOMP
+            self.send_music(df_data)
+
+        except Exception as e:
+            logger.error(f"Processing error: {e}")
+
         pass
 
 
@@ -83,47 +83,64 @@ class DataService:
             return None
 
     @staticmethod
-    def merge_data(csv_files):
+    def merge_data(csv_files, chunk_size: int = 50000) -> pd.DataFrame:
         """Fusionne les fichiers CSV en optimisant la mémoire."""
-        all_chunks = []
-        logger.info("Start merging data")
-        for csv_file in csv_files:
-            chunks = pd.read_csv(csv_file.file_path, chunksize=10000,
-                                 dtype={'spot_id': 'int32'})  # Optimisation type dès la lecture
-            all_chunks.append(list(chunks))
 
-        merged_chunks = []
-        first_file_chunks = all_chunks[0]
+        try:
+            # Chargement des chunks
+            df1_chunks = pd.read_csv(csv_files[0].file_path, chunksize=chunk_size)
+            df2_chunks = pd.read_csv(csv_files[1].file_path, chunksize=chunk_size)
 
-        for i, file_chunks in enumerate(all_chunks[1:]):
-            for chunk1 in first_file_chunks:
-                for chunk2 in file_chunks:
-                    chunk2 = chunk2.loc[:, ~chunk2.columns.duplicated()]
-                    merged_chunk = pd.merge(chunk1, chunk2, left_on=csv_files[0].spot_id,
-                                            right_on=csv_files[i + 1].spot_id, how='outer')
-                    merged_chunks.append(merged_chunk)
-                    del chunk2  # Supprime chunk2 explicitement après utilisation
-                    gc.collect()  # Force le garbage collector
-            first_file_chunks = merged_chunks
-            merged_chunks = []
-            gc.collect()
+            merged_dataframes = []
 
-        final_df = pd.concat(first_file_chunks, ignore_index=True)
-        logger.info("All data is merged")
-        return final_df
+            for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
+                # Merge des chunks
+                merged_chunk = pd.merge(
+                    chunk1,
+                    chunk2,
+                    left_on=csv_files[0].spot_id,
+                    right_on=csv_files[1].spot_id,
+                    how='outer'
+                )
+                merged_dataframes.append(merged_chunk)
+
+            # Concaténation finale
+            final_merged_df = pd.concat(merged_dataframes, ignore_index=True)
+
+            logger.info(f"Merge completed. Total rows: {len(final_merged_df)}")
+            return final_merged_df
+
+        except Exception as e:
+            logger.error(f"Merge error: {e}")
+            raise
 
     def send_music(self, merged_df):
-        chunk_size = 500
-        logger.info("Start send data to Active MQ")
-        for start in range(0, len(merged_df), chunk_size):
-            chunk = merged_df.iloc[start:start + chunk_size]
-            commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
-            for index, row in chunk.iterrows():  # itertuples est plus rapide que iterrows, mais pour la conversion json, il faut rester en iterrows
-                commit.send(row.to_json())
-            del commit, chunk
-            gc.collect()
-            logger.debug("data add to queue: %s", start + chunk_size)
-        logger.info("All data is send to Active MQ")
+        """
+        Envoi des données via STOMP avec commit
+
+        :param merged_df: DataFrame mergé à envoyer
+        """
+        try:
+            #commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
+
+            # Envoi ligne par ligne
+            with self.stomp_controller.create_transaction("com.jamify.ai.tag-gen") as transaction:
+                for _, row in merged_df.iterrows():
+                    transaction.send(row.to_json())
+                    #commit.send(row.to_json())
+                    #self.stomp_controller.send_message("com.jamify.ai.tag-gen",row.to_json())
+                    pass
+
+            # Commit de la transaction
+            #del commit
+            logger.info("All messages sent and committed successfully")
+
+        except Exception as e:
+            logger.error(f"STOMP send error: {e}")
+
+
+
+
 
 
 

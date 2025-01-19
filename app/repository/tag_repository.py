@@ -23,6 +23,7 @@
 
 
 import psycopg2
+import random as rand
 
 from app.dto.music_tag_dto import MusicTagDTO
 from app.dto.tag_dto import TagDTO
@@ -68,7 +69,7 @@ class TagRepository:
         sql = """SELECT tag_id, tag_label FROM tag_entity WHERE tag_id = %s"""
         return self.private_get_tag(sql, tag_id)
 
-    def get_tag_by_name(self, name):
+    def get_tag_by_name(self, name: str) -> TagDTO:
         sql = """SELECT tag_id, tag_label FROM tag_entity WHERE tag_label = %s"""
         return self.private_get_tag(sql, name)
 
@@ -76,15 +77,18 @@ class TagRepository:
         sql = """SELECT tag_id, tag_label FROM tag_entity"""
         return self.private_get_tag(sql, "")
 
-    def add_tag(self, label: str):
-        sql = """INSERT INTO tag_entity(tag_label) VALUES(%s) RETURNING tag_id"""
+    def add_tag(self, label: str)-> TagDTO:
+        sql = """INSERT INTO tag_entity(tag_label, tag_id) VALUES(%s, %s) RETURNING tag_id, tag_label"""
         tag_id = None
         try:
             with self.conn.cursor() as cur:
-                cur.execute(sql, (label,))
+                cur.execute(sql, (label,rand.randint(1, 1000000)))
                 rows = cur.fetchone()
                 if rows:
-                    tag_id = rows[0]
+                    tag_id = TagDTO(
+                        id=rows[0],
+                        name=rows[1]
+                    )
                 self.conn.commit()
         except (Exception, psycopg2.DatabaseError) as e:
             logger.error(e)
@@ -101,10 +105,10 @@ class TagRepository:
             logger.error(e)
 
     def add_link_music_tag(self, music_id, tag_name):
-        tag_id = self.get_tag_by_name(tag_name)
-        if not tag_id:
-            tag_id = self.add_tag(tag_name)
-        self.add_music_tag(music_id, tag_id)
+        tag = self.get_tag_by_name(tag_name)
+        if not tag:
+            tag = self.add_tag(tag_name)
+        self.add_music_tag(music_id, str(tag.id))
         pass
 
     def get_tag_by_music(self, music_id):

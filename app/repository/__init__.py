@@ -51,7 +51,7 @@ class Repository:
         try:
             # connecting to the PostgreSQL server
             with psycopg2.connect(**pg_connection_dict) as conn:
-                logger.info('Connected to the PostgreSQL server.')
+                logger.debug('Connected to the PostgreSQL server.')
                 self.connection = conn
             self.music_repository = MusicRepository(self.connection)
             self.tags_repository = TagRepository(self.connection)
@@ -62,4 +62,4 @@ class Repository:
         """ Disconnect from the PostgreSQL database server """
         if self.connection:
             self.connection.close()
-            #logger.info('Database connection closed.')
+            logger.debug('Database connection closed.')

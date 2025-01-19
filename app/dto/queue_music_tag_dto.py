@@ -36,9 +36,9 @@ from marshmallow import fields, Schema, post_load
 
 
 class QueueMusicTagDTO(Schema):
-    id = fields.String(required=True)
-    name = fields.String(required=True)
-    artists = fields.String(required=True)
+    id = fields.String(required=True, allow_none=True)
+    name = fields.String(required=True, allow_none=True)
+    artists = fields.String(required=True, allow_none=True)
     duration = fields.Integer(required=False, allow_none=True)
     album_name = fields.String(required=False, allow_none=True)
     isrc = fields.String(required=False, allow_none=True)
@@ -70,11 +70,25 @@ class QueueMusicTagDTO(Schema):
         # Convertir 'updated_on' en chaîne de caractères si elle est présente
         if 'updated_on' in data and isinstance(data['updated_on'], datetime):
             data['updated_on'] = data['updated_on'].isoformat()  # Convertir en format ISO 8601
-
+    
         if 'key' in data and isinstance(data['key'], str):
             data['key'] = int(data['key'])
-
+    
         if 'mode' in data and isinstance(data['mode'], str):
             data['mode'] = int(data['mode'])
+    
+        # Assign 'track_id' to 'id' if 'id' is null
+        if not data.get('id') and data.get('track_id'):
+            data['id'] = data['track_id']
+
+        # Assign 'track_id' to 'id' if 'id' is null
+        if not data.get('name') and data.get('track_title'):
+            data['name'] = data['track_title']
+
+        # Assign 'track_id' to 'id' if 'id' is null
+        if not data.get('artists'):
+            data['artists'] = "unknown"
+
+
 
         return data
