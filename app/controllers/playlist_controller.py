@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from app.services.playlist_service import PlaylistService
-from app.utils.constants import JSON_FIELDS
 from app.controllers.stomp_controller import StompController
 
 playlist_controller = Blueprint('playlist_controller', __name__)
@@ -14,43 +13,49 @@ def generate_playlist():
             return jsonify({"error": "Le corps de la requête est vide."}), 400
 
         # Validation des champs requis
-        if 'id' not in data or 'userId' not in data or 'data' not in data:
-            return jsonify({"error": "Les champs 'id', 'userId' et 'data' sont requis."}), 400
+        required_fields = ['id', 'userId', 'data']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({"error": f"Le champ '{field}' est requis."}), 400
 
         job_id = data['id']
         user_id = data['userId']
         job_data = data['data']
 
-                # Validation des données internes
-        if 'tags' not in job_data or 'numberOfTitle' not in job_data:
-            return jsonify({"error": "Les champs 'tags' et 'numberOfTitle' sont requis dans 'data'."}), 400
+        # Validation des champs dans 'data'
+        required_data_fields = ['tags', 'name', 'description']
+        for field in required_data_fields:
+            if field not in job_data:
+                return jsonify({"error": f"Le champ '{field}' est requis dans 'data'."}), 400
 
+        # Récupérer et définir les valeurs
         tags = job_data['tags']
-        number_of_titles = job_data['numberOfTitle']
+        name = job_data['name']
+        description = job_data['description']
 
-        # Validation si 'tags' est une liste
+        # Si numberOfTitle n'est pas fourni, définir une valeur par défaut de 20
+        number_of_titles = job_data.get('numberOfTitle', 20)
+
+        # Validation des types de données
         if not isinstance(tags, list):
             return jsonify({"error": "'tags' doit être une liste."}), 400
+        if not isinstance(number_of_titles, int):
+            return jsonify({"error": "'numberOfTitle' doit être un entier."}), 400
 
         # Suppression des espaces superflus autour de chaque tag
         keywords = [tag.strip() for tag in tags]
 
-        if not isinstance(number_of_titles, int):
-            return jsonify({"error": "'numberOfTitle' doit être un entier."}), 400
-
-
-
-
         # Appel au service de génération de playlist
         csv_file = "app/playlist/music_tags_realistic.csv"
-        playlist = PlaylistService.generate_playlist(csv_file, keywords, number_of_titles)
-
-        # Construction de la réponse
-        playlist_end_job = {
-            "id": job_id,
-            "userId": user_id,
-            "data": [{"idMusic": song['id']} for song in playlist]
-        }
+        playlist_end_job = PlaylistService.generate_playlist(
+            csv_file,
+            keywords,
+            number_of_titles,
+            job_id,
+            user_id,
+            name,
+            description
+        )
 
         # Envoi de la réponse dans la queue STOMP
         destination = "/queue/playlist"  # Nom de la queue STOMP
@@ -61,3 +66,4 @@ def generate_playlist():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
