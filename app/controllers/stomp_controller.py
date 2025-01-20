@@ -20,6 +20,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 import json
 import os
 import queue
@@ -103,7 +113,8 @@ class StompController:
         self.listener = custom_listener or self._default_message_handler
 
         # Initialisation de la connexion
-        self._init_connection()
+        if not os.environ.get('TESTING', False):
+            self._init_connection()
 
     def _init_connection(self):
         """
@@ -438,6 +449,7 @@ class AdvancedStompTransaction:
                         self.total_memory_used + message_size > self.max_memory_limit):
                     # Auto-commit si les limites sont atteintes
                     self.commit()
+                    time.sleep(1)
                     # Nouvelle transaction
                     self.txid = self.stomp_client.connection.begin()
                     self.messages.clear()
@@ -448,7 +460,10 @@ class AdvancedStompTransaction:
                 self.stomp_client.connection.send(
                     destination=self.destination,
                     body=message_bytes,
-                    transaction=self.txid
+                    transaction=self.txid,
+                    headers={
+                        'persistent': 'true'
+                    }
                 )
 
                 # Mise à jour des métriques

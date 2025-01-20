@@ -20,10 +20,19 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 
 import psycopg2
-import random as rand
 
 from app.dto.music_tag_dto import MusicTagDTO
 from app.dto.tag_dto import TagDTO
@@ -78,11 +87,11 @@ class TagRepository:
         return self.private_get_tag(sql, "")
 
     def add_tag(self, label: str)-> TagDTO:
-        sql = """INSERT INTO tag_entity(tag_label, tag_id) VALUES(%s, %s) RETURNING tag_id, tag_label"""
+        sql = """INSERT INTO tag_entity(tag_label) VALUES(%s) RETURNING tag_id, tag_label"""
         tag_id = None
         try:
             with self.conn.cursor() as cur:
-                cur.execute(sql, (label,rand.randint(1, 1000000)))
+                cur.execute(sql, (label,))
                 rows = cur.fetchone()
                 if rows:
                     tag_id = TagDTO(
@@ -108,7 +117,7 @@ class TagRepository:
         tag = self.get_tag_by_name(tag_name)
         if not tag:
             tag = self.add_tag(tag_name)
-        self.add_music_tag(music_id, str(tag.id))
+        self.add_music_tag(music_id, tag.id)
         pass
 
     def get_tag_by_music(self, music_id):

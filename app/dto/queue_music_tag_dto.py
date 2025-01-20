@@ -30,9 +30,21 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 from datetime import datetime
 
 from marshmallow import fields, Schema, post_load
+
+from app.utils.logger import logger
 
 
 class QueueMusicTagDTO(Schema):
@@ -66,16 +78,23 @@ class QueueMusicTagDTO(Schema):
     track_title = fields.String(required=False, allow_none=True)
 
     @post_load
-    def convert_types(self, data, **kwargs):
+    def make_queue_music_tag_dto(self, data, **kwargs):
+
         # Convertir 'updated_on' en chaîne de caractères si elle est présente
         if 'updated_on' in data and isinstance(data['updated_on'], datetime):
             data['updated_on'] = data['updated_on'].isoformat()  # Convertir en format ISO 8601
-    
-        if 'key' in data and isinstance(data['key'], str):
-            data['key'] = int(data['key'])
-    
-        if 'mode' in data and isinstance(data['mode'], str):
-            data['mode'] = int(data['mode'])
+        return data
+
+    @staticmethod
+    def preprocess(data, **kwargs):
+
+        # Convertir 'key' et 'mode' en int si ce sont des strings
+        for field in ['key', 'mode']:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = int(data[field])
+                except ValueError:
+                    data[field] = None
     
         # Assign 'track_id' to 'id' if 'id' is null
         if not data.get('id') and data.get('track_id'):
@@ -88,7 +107,20 @@ class QueueMusicTagDTO(Schema):
         # Assign 'track_id' to 'id' if 'id' is null
         if not data.get('artists'):
             data['artists'] = "unknown"
-
+            # Vérifier si 'artists' est une chaîne qui ressemble à une liste et la convertir
+        if isinstance(data['artists'], str) and ('[' in data['artists'] and ']' in data['artists']):
+            # Convertir la chaîne en liste
+            try:
+                # Évaluer la chaîne en toute sécurité
+                artists_list = eval(data['artists'])  # Utiliser eval avec précaution
+                if isinstance(artists_list, list) and artists_list:
+                    data['artists'] = artists_list[0]  # Prendre le premier élément de la liste
+            except Exception as e:
+                logger.error(f"Erreur lors de la conversion de 'artists': {e}")
+                data['artists'] = "unknown"  # Valeur par défaut en cas d'erreur
+        elif isinstance(data['artists'], str):
+            # Si ce n'est pas une liste, on peut simplement garder la chaîne
+            data['artists'] = data['artists']
 
 
         return data

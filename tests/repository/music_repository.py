@@ -40,6 +40,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 import unittest
 from unittest.mock import MagicMock
 
@@ -57,14 +67,15 @@ class TestMusicRepository(unittest.TestCase):
     def test_add_music_success(self):
         # Préparation des données de test
         music_dto = MusicDTO(author="Author", energy=5, imgurl="image_url", isrc="ISRC123", tempo=120, title="Title")
-        self.mock_conn.cursor.return_value.__enter__.return_value.fetchone.return_value = (1,)  # Simule un ID retourné
+        self.mock_conn.cursor.return_value.__enter__.return_value.fetchone.side_effect = [None,
+                                                                                          (1,)]  # Simule un ID retourné
 
         # Appel de la méthode
         music_id = self.music_repo.add_music(music_dto)
 
         # Assertions
         self.assertEqual(music_id, 1)
-        self.mock_conn.cursor.return_value.__enter__.return_value.execute.assert_called_once()
+        self.mock_conn.cursor.return_value.__enter__.return_value.execute.assert_called()
         self.mock_conn.commit.assert_called_once()
 
     def test_add_music_failure(self):

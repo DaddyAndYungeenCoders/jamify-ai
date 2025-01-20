@@ -6,7 +6,7 @@ services:
       context: .
     environment:
       DBHOST: db
-      DBNAME: jamify
+      DBNAME: engine
       DBUSER: admin
       DBPASS: admin
       QUEHOST: activemq
@@ -22,7 +22,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: jamify
+      POSTGRES_DB: engine
     ports:
       - "5432:5432" # Admin console
     volumes:

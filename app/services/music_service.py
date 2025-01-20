@@ -10,6 +10,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import json
 
@@ -56,8 +66,9 @@ class MusicService:
         # Utilise le schéma de validation pour valider les données
         schema = QueueMusicTagDTO()
         try:
+            data_cleaned = schema.preprocess(json.loads(data))
             # Valider les données
-            validated_data = schema.load(json.loads(data))
+            validated_data = schema.load(data_cleaned)
         except ValidationError as err:
             logger.warning("data received : %s", data)
             logger.warning("Data not valid: %s", json.dumps(err.messages))
@@ -77,7 +88,11 @@ class MusicService:
             logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO SAVE TAGS")
             return None
         music_id = self.save_music(database)
-        self.generate_tag(database, music_id)
+        if not music_id:
+            logger.info('Music already exists : %s', self.dataset_dto['name'])
+            raise ValueError
+        else:
+            self.generate_tag(database, music_id)
         database.disconnect()
 
         return True
