@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
+
+from app import controllers
 from app.services.playlist_service import PlaylistService
 from app.controllers.stomp_controller import StompController
 
 playlist_controller = Blueprint('playlist_controller', __name__)
-stomp_controller = StompController()
+stomp_controller = controllers.stomp
 
 @playlist_controller.route('/', methods=['POST'])
 def generate_playlist():
@@ -43,7 +45,6 @@ def generate_playlist():
 
         # Envoi de la réponse dans la queue STOMP
         destination = "/queue/playlist"  # Nom de la queue STOMP
-        stomp_controller.connected()
         stomp_controller.send_message(destination, str(playlist_end_job))
 
         return jsonify({"message": "Playlist générée et envoyée dans la queue STOMP.", "playlist": playlist_end_job}), 200
