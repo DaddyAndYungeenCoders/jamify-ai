@@ -39,7 +39,6 @@ import time
 from typing import Any, List, Optional, Dict, Callable, Union
 
 import stomp
-
 from app.utils.logger import logger
 
 
@@ -543,6 +542,7 @@ class AdvancedStompTransaction:
             self.stomp_client._resubscribe_all()
         except Exception:
             self._handle_error()
+
 
 
 class Subscriber:
