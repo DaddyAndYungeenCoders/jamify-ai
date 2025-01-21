@@ -1,11 +1,9 @@
 from flask import Blueprint, request, jsonify
-
-from app import controllers
 from app.services.playlist_service import PlaylistService
 from app.controllers.stomp_controller import StompController
 
 playlist_controller = Blueprint('playlist_controller', __name__)
-stomp_controller = controllers.stomp
+stomp_controller = StompController()
 
 @playlist_controller.route('/', methods=['POST'])
 def generate_playlist():
