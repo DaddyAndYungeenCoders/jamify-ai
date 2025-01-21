@@ -127,6 +127,9 @@ class TagRepository:
         tag = self.get_tag_by_name(tag_name)
         if not tag:
             tag = self.add_tag(tag_name)
+        exist = self.get_tag_by_music(music_id)
+        if tag_name in exist:
+            return
         self.add_music_tag(music_id, tag.id)
         pass
 

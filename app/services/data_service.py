@@ -106,25 +106,24 @@ class DataService:
 
         try:
             # Chargement des chunks
-            df1_chunks = pd.read_csv(csv_files[0].file_path, chunksize=chunk_size)
-            df2_chunks = pd.read_csv(csv_files[1].file_path, chunksize=chunk_size)
+            df1_chunks = pd.read_csv(csv_files[0].file_path)
+            df2_chunks = pd.read_csv(csv_files[1].file_path)
 
             merged_dataframes = []
 
-            for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
+            #for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
                 # Merge des chunks
-                merged_chunk = pd.merge(
-                    chunk1,
-                    chunk2,
-                    left_on=csv_files[0].spot_id,
-                    right_on=csv_files[1].spot_id,
-                    how='outer'
-                )
-                merged_dataframes.append(merged_chunk)
+            merged_chunk = pd.merge(
+                df1_chunks,
+                df2_chunks,
+                left_on=csv_files[0].spot_id,
+                right_on=csv_files[1].spot_id,
+                how='left'
+            )
+            merged_dataframes.append(merged_chunk)
 
             # Concaténation finale
             final_merged_df = pd.concat(merged_dataframes, ignore_index=True)
-            final_merged_df = final_merged_df.dropna(subset=['isrc'])
 
             logger.info(f"Merge completed. Total rows: {len(final_merged_df)}")
             return final_merged_df

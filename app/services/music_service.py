@@ -66,7 +66,7 @@ class MusicService:
         # Créer le générateur de tags
         tag_generator = TagService(repository.tags_repository)
 
-        if self.dataset_dto.lyrics is not None:
+        if self.dataset_dto['lyrics'] is not None:
             # Générer et ajouter les tags
             tag_generator.tag_music(self.dataset_dto, music_id)
 
@@ -98,11 +98,7 @@ class MusicService:
             logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO SAVE TAGS")
             return None
         music_id = self.save_music(database)
-        if not music_id:
-            logger.info('Music already exists : %s', self.dataset_dto['name'])
-            raise ValueError
-        else:
-            self.generate_tag(database, music_id)
+        self.generate_tag(database, music_id)
         database.disconnect()
 
         return True

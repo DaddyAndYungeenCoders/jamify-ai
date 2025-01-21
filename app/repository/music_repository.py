@@ -55,7 +55,7 @@ class MusicRepository:
     def add_music(self, music: MusicDTO):
         data = self.get_music_by_isrc(music.isrc)
         if not data is None:
-            return None
+            return data.id
         sql = """INSERT INTO music(music_author,music_energy,music_image_src,music_isrc,music_tempo,music_title) VALUES(%s,%s,%s,%s,%s,%s) RETURNING music_id"""
         music_id = None
 
