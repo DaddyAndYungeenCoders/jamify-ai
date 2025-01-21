@@ -50,7 +50,7 @@ def find_synonyms(word):
 
 class PlaylistService:
     @staticmethod
-    def generate_playlist(csv_file, keywords, number=None):
+    def generate_playlist(csv_file, keywords, number=None, job_id=None, user_id=None):
         """
         Génère une playlist basée sur un ou plusieurs mots-clés, en considérant tous les synonymes trouvés.
         """
@@ -70,7 +70,14 @@ class PlaylistService:
         if number is not None:
             filtered_songs = filtered_songs.head(number)
 
-        return filtered_songs.to_dict(orient='records')
+        # Construction de la réponse
+        playlist_end_job = {
+            "id": job_id,
+            "userId": user_id,
+            "data": [{"idMusic": song['id']} for song in filtered_songs.to_dict(orient='records')]
+        }
+
+        return playlist_end_job
 
     @staticmethod
     def find_similar_tags(user_input, tags):

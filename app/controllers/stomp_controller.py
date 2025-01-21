@@ -1,70 +1,5 @@
-#  Copyright (c) 2024, LAPETITTE Matthieu
-#  Tous droits réservés.
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-
 import random as rand
-
 import stomp
-
 from app.utils.logger import logger
 
 
@@ -95,32 +30,57 @@ class StompController:
         self.stomp_client = None
         self.connection = stomp.Connection([("localhost", 61613)])
         self.connection.set_listener('', StompListener(self))
-        # self.connected()
+        logger.debug('StompController initialized, connection set up')
 
     def connected(self):
-        self.connection.connect('myuser', 'mypwd', wait=True)
-        logger.info('Stomp client connected')
-        for subscriber in self.list_subscribers:
-            self.connection.subscribe(destination=subscriber.destination, id=subscriber.str_id(), ack='auto')
+        logger.debug('Connecting to STOMP server...')
+        try:
+            self.connection.connect('myuser', 'mypwd', wait=True)
+            logger.info('Stomp client connected successfully')
+            for subscriber in self.list_subscribers:
+                self.connection.subscribe(destination=subscriber.destination, id=subscriber.str_id(), ack='auto')
+                logger.debug(f'Subscribed to {subscriber.destination}')
+        except Exception as e:
+            logger.error(f"Failed to connect to STOMP server: {e}")
 
     def add_subscriber(self, queues_name, listener):
-        subscriber = Subscriber(queues_name, listener)
-        self.list_subscribers.append(subscriber)
-        self.connection.subscribe(destination=subscriber.destination, id=subscriber.str_id(), ack='auto')
+        logger.debug(f'Adding subscriber for queue {queues_name}')
+        try:
+            subscriber = Subscriber(queues_name, listener)
+            self.list_subscribers.append(subscriber)
+            self.connection.subscribe(destination=subscriber.destination, id=subscriber.str_id(), ack='auto')
+            logger.debug(f'Subscriber added to {queues_name}')
+        except Exception as e:
+            logger.error(f"Error adding subscriber: {e}")
 
     def remove_subscriber(self, queues_name):
-        for subscriber in self.list_subscribers:
-            if subscriber.destination == queues_name:
-                self.list_subscribers.remove(subscriber)
-                self.connection.unsubscribe(id=subscriber.str_id())
-                break
+        logger.debug(f'Removing subscriber from {queues_name}')
+        try:
+            for subscriber in self.list_subscribers:
+                if subscriber.destination == queues_name:
+                    self.list_subscribers.remove(subscriber)
+                    self.connection.unsubscribe(id=subscriber.str_id())
+                    logger.debug(f'Subscriber removed from {queues_name}')
+                    break
+        except Exception as e:
+            logger.error(f"Error removing subscriber: {e}")
 
     def send_message(self, destination, body):
-        logger.debug('send a message : "%s"' % body)
-        self.connection.send(body=body, destination=destination)
+        logger.debug(f'Sending message to {destination} with body: {body}')
+        try:
+            self.connection.send(body=body, destination=destination)
+            logger.info(f'Message successfully sent to {destination}')
+        except Exception as e:
+            logger.error(f"Erreur lors de l'envoi du message à {destination}: {e}")
+            raise
 
     def __del__(self):
-        self.connection.disconnect()
+        logger.debug('Disconnecting from STOMP server')
+        try:
+            self.connection.disconnect()
+            logger.info('Stomp client disconnected successfully')
+        except Exception as e:
+            logger.error(f"Error disconnecting from STOMP server: {e}")
 
 
 class Subscriber:
