@@ -50,6 +50,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 import os
 import unittest
 from unittest.mock import MagicMock
@@ -157,7 +167,7 @@ class TestTagRepository(unittest.TestCase):
 
         # Assertions
         self.mock_conn.cursor.return_value.__enter__.return_value.execute.assert_any_call(
-            """INSERT INTO tag_entity(tag_label) VALUES(%s) RETURNING tag_id, tag_label""", ("NewTag",)
+            """INSERT INTO tag(tag_label) VALUES(%s) RETURNING tag_id, tag_label""", ("NewTag",)
         )
         self.mock_conn.cursor.return_value.__enter__.return_value.execute.assert_any_call(
             """INSERT INTO music_tag(music_id, tag_id) VALUES(%s,%s)""", (1, 1)

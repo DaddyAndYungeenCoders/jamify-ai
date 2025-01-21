@@ -30,6 +30,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 
 import psycopg2
@@ -43,7 +53,7 @@ class MusicRepository:
         self.conn = conn
 
     def add_music(self, music: MusicDTO):
-        data = self._get_exact_music(music.title, music.author, music.tempo, music.isrc)
+        data = self.get_music_by_isrc(music.isrc)
         if not data is None:
             return None
         sql = """INSERT INTO music(music_author,music_energy,music_image_src,music_isrc,music_tempo,music_title) VALUES(%s,%s,%s,%s,%s,%s) RETURNING music_id"""
@@ -70,6 +80,10 @@ class MusicRepository:
     def get_music_by_title(self, title):
         sql = """SELECT music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title FROM music WHERE music_title = %s"""
         return self.private_get_music(sql, title)
+
+    def get_music_by_isrc(self, isrc):
+        sql = """SELECT music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title FROM music WHERE music_isrc = %s"""
+        return self.private_get_music(sql, isrc)
 
     def _get_exact_music(self, title: str, author: str, tempo: str, isrc: str):
         sql = """SELECT music_id FROM music WHERE music_title = %s AND music_author = %s AND music_tempo = %s AND music_isrc = %s"""

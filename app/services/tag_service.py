@@ -1,10 +1,27 @@
-from typing import List, Optional, Dict, Any, Tuple
+#  Copyright (c) 2024, LAPETITTE Matthieu
+#  Tous droits réservés.
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
+
+import os
+from typing import List, Dict, Tuple
+
 import numpy as np
+import transformers
 
 from app.utils.logger import logger
 
 
 class TagService:
+    model_place = os.path.join(".", "models", "latest")
     # Définition des tags avec leurs plages de caractéristiques
     TAG_DEFINITIONS = {
         'Joyeux': {
@@ -80,7 +97,7 @@ class TagService:
             if not existing_tag:
                 self.tag_repository.add_tag(tag_name)
 
-    def generate_tags(self, music_data: Dict[str, Any]) -> List[str]:
+    def generate_tags(self, music_data) -> List[str]:
         """
         Génère les tags pour un morceau en fonction de ses caractéristiques
 
@@ -93,11 +110,22 @@ class TagService:
             if self._check_tag_match(music_data, tag_criteria):
                 matching_tags.append(tag_name)
 
+        model_dir = self.model_place
+        tokenizer = transformers.AutoTokenizer.from_pretrained(model_dir)
+        model = transformers.AutoModelForSequenceClassification.from_pretrained(model_dir)
+        pipeline = transformers.pipeline("text-classification", model=model, tokenizer=tokenizer, top_k=None)
+
+        emotions = pipeline(music_data.lyrics, truncation=True)[0]
+        for emotion in emotions:
+            if emotion['score'] > 0.8:
+                matching_tags.append(emotion['label'])
+
         return matching_tags
+
 
     def _check_tag_match(
             self,
-            music_data: Dict[str, Any],
+            music_data,
             tag_criteria: Dict[str, Tuple[float, float]]
     ) -> bool:
         """
@@ -118,7 +146,7 @@ class TagService:
         # Le tag correspond si au moins la moitié des critères sont satisfaits
         return len(matches) > 0 and np.mean(matches) >= 0.5
 
-    def tag_music(self, music_data: Dict[str, Any], music_id):
+    def tag_music(self, music_data, music_id):
         """
         Étiquette un morceau avec les tags correspondants
 

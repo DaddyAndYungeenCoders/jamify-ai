@@ -1,6 +1,6 @@
-FROM python:3.9.21-alpine3.21
+FROM python:3.9.21-bookworm
 
-RUN apk add --no-cache gcc musl-dev g++ libffi-dev
+#RUN apt install gcc musl-dev g++ libffi-dev
 
 
 RUN mkdir "/repo"
@@ -13,6 +13,7 @@ COPY ./app /repo/app
 WORKDIR /repo
 
 RUN python3 -m pip install --upgrade pip
+RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 RUN pip3 install -r requirements.txt
 
 
