@@ -21,11 +21,15 @@ def generate_playlist():
         job_data = data['data']
 
         # Validation des données internes
-        if 'tags' not in job_data or 'numberOfTitle' not in job_data:
-            return jsonify({"error": "Les champs 'tags' et 'numberOfTitle' sont requis dans 'data'."}), 400
+        if 'tags' not in job_data or 'name' not in job_data or 'description' not in job_data:
+            return jsonify({"error": "Les champs 'tags', 'name', et 'description' sont requis dans 'data'."}), 400
 
         tags = job_data['tags']
-        number_of_titles = job_data['numberOfTitle']
+        name = job_data['name']
+        description = job_data['description']
+
+        # 'numberOfTitle' est facultatif, avec une valeur par défaut de 20
+        number_of_titles = job_data.get('numberOfTitle', 20)
 
         # Validation si 'tags' est une liste
         if not isinstance(tags, list):
@@ -39,7 +43,15 @@ def generate_playlist():
 
         # Appel au service de génération de playlist
         csv_file = "app/playlist/music_tags_realistic.csv"
-        playlist_end_job = PlaylistService.generate_playlist(csv_file, keywords, number_of_titles, job_id, user_id)
+        playlist_end_job = PlaylistService.generate_playlist(
+            csv_file=csv_file,
+            keywords=keywords,
+            name=name,
+            description=description,
+            number=number_of_titles,
+            job_id=job_id,
+            user_id=user_id
+        )
 
         # Envoi de la réponse dans la queue STOMP
         destination = "/queue/playlist"  # Nom de la queue STOMP
