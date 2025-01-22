@@ -5,50 +5,53 @@ from googletrans import Translator
 import pandas as pd
 import langid
 from flask import jsonify
-from nltk.corpus import wordnet as wn
 from app.utils.constants import SPACY_MODEL_NAME, TAG_FIELD
 
-# URL du bucket S3 contenant le modèle GloVe
-GLOVE_URL = "https://jamifybucket.s3.eu-north-1.amazonaws.com/glove.840B.300d.txt"
-GLOVE_DIR = "./glove"  # Répertoire local pour le modèle
-GLOVE_FILE = os.path.join(GLOVE_DIR, "glove.840B.300d.txt")
-SPACY_MODEL_DIR = "./glove_vectors"  # Répertoire pour les vecteurs SpaCy convertis
+# URL du bucket S3 contenant les vecteurs SpaCy
+S3_BASE_URL = "https://jamifybucket.s3.eu-north-1.amazonaws.com/glove_vectors"
+SPACY_MODEL_DIR = "./glove_vectors"
 
-# Fonction pour télécharger le modèle GloVe
-def download_glove_model(url, file_path):
-    """
-    Télécharge le fichier GloVe depuis un bucket S3 public si non présent localement.
-    """
-    if not os.path.exists(file_path):
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        print(f"Téléchargement du modèle GloVe depuis {url}...")
-        response = requests.get(url, stream=True)
-        with open(file_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-        print("Téléchargement terminé.")
-    else:
-        print("Modèle GloVe déjà téléchargé.")
+# Liste des fichiers nécessaires pour les vecteurs SpaCy
+GLOVE_VECTOR_FILES = [
+    "config.cfg",
+    "meta.json",
+    "tokenizer",
+    "vocab/key2row",
+    "vocab/lookups.bin",
+    "vocab/strings.json",
+    "vocab/vectors",
+    "vocab/vectors.cfg",
+]
 
-# Fonction pour convertir GloVe en vecteurs SpaCy si nécessaire
-def convert_glove_to_spacy(glove_file, spacy_model_dir):
+def download_glove_vectors(base_url, target_dir, files):
     """
-    Convertit les vecteurs GloVe en format SpaCy si nécessaire.
+    Télécharge les fichiers nécessaires depuis un bucket S3.
     """
-    if not os.path.exists(spacy_model_dir):
-        print("Les vecteurs GloVe ne sont pas convertis pour SpaCy.")
-        print("Conversion des vecteurs GloVe en format SpaCy...")
-        os.system(f"python -m spacy init vectors en {glove_file} {spacy_model_dir} --name glove")
-        print("Conversion terminée.")
-    else:
-        print("Les vecteurs GloVe sont déjà convertis pour SpaCy.")
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    
+    for file_name in files:
+        file_url = f"{base_url}/{file_name}"
+        local_file_path = os.path.join(target_dir, file_name.replace("/", os.sep))
+        
+        # Créer les sous-dossiers si nécessaire
+        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+        
+        if not os.path.exists(local_file_path):
+            print(f"Téléchargement de {file_name}...")
+            response = requests.get(file_url, stream=True)
+            if response.status_code == 200:
+                with open(local_file_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        f.write(chunk)
+                print(f"{file_name} téléchargé avec succès.")
+            else:
+                raise RuntimeError(f"Impossible de télécharger {file_name}. Erreur {response.status_code}.")
+        else:
+            print(f"{file_name} est déjà présent.")
 
-# Télécharger le modèle GloVe si nécessaire
-download_glove_model(GLOVE_URL, GLOVE_FILE)
-
-# Convertir GloVe en vecteurs SpaCy si nécessaire
-convert_glove_to_spacy(GLOVE_FILE, SPACY_MODEL_DIR)
+# Télécharger tous les fichiers nécessaires
+download_glove_vectors(S3_BASE_URL, SPACY_MODEL_DIR, GLOVE_VECTOR_FILES)
 
 # Charger les vecteurs convertis dans SpaCy
 SPACY_MODEL = spacy.load(SPACY_MODEL_DIR)
@@ -116,7 +119,6 @@ class PlaylistService:
         }
 
         return playlist_end_job
-
 
     @staticmethod
     def find_similar_tags(user_input, tags):
