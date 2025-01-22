@@ -225,7 +225,6 @@ class PlaylistService:
             keywords = data.get('tags')
             name = data.get('name')
             description = data.get('description')
-
             logger.info(f"Traitement de la playlist pour Job ID: {job_id}, User ID: {user_id}")
             logger.info(f"Keywords: {keywords}, Name: {name}, Description: {description}")
 
