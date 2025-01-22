@@ -1,8 +1,3 @@
-import os
-import requests
-import spacy
-from googletrans import Translator
-import pandas as pd
 import langid
 from flask import jsonify
 from app.utils.constants import SPACY_MODEL_NAME, TAG_FIELD
@@ -63,59 +58,72 @@ else:
     print("Les vecteurs GloVe sont bien chargés dans SpaCy.")
 
 # Création du traducteur Google Translate
+
 translator = Translator()
 
 def detect_language(text):
     """
-    Détecte la langue d'un texte avec langid.
+    Détecte la langue d'un texte, même si c'est un seul mot.
+    Utilise langid pour la détection de langue.
     """
     try:
+        # Détecter la langue avec langid
         lang, _ = langid.classify(text)
         return lang
     except Exception as e:
-        raise ValueError(f"Langue non prise en charge : {str(e)}")
+        return jsonify({"error": f"Langue non prise en charge. {str(e)}"}), 400
 
 def translate_to_english(text, lang):
     """
-    Traduit un texte vers l'anglais si nécessaire.
+    Traduit un texte dans la langue spécifiée vers l'anglais si nécessaire.
+    Utilise Google Translate pour effectuer la traduction.
     """
     if lang != "en":
+        # Traduire le mot-clé dans la langue anglaise si nécessaire
         translated = translator.translate(text, src=lang, dest="en")
         return translated.text
     return text
 
+def find_synonyms(word):
+    """
+    Trouve les synonymes d'un mot en utilisant WordNet en anglais.
+    """
+    synonyms = set()
+    
+    # Recherche des synonymes uniquement en anglais
+    for synset in wn.synsets(word, lang="eng"):
+        for lemma in synset.lemmas("eng"):
+            synonyms.add(lemma.name().lower())
+
+    return synonyms
+
 class PlaylistService:
     @staticmethod
-    def generate_playlist(csv_file, keywords, name, description, number=None, job_id=None, user_id=None):
+    def generate_playlist(csv_file, keywords, number=None, job_id=None, user_id=None):
         """
-        Génère une playlist basée sur la similarité des mots-clés avec les tags.
+        Génère une playlist basée sur un ou plusieurs mots-clés, en considérant tous les synonymes trouvés.
         """
-        # Chargement des données CSV
+        # Charger les données depuis le fichier CSV
         data = pd.read_csv(csv_file)
         tags = data[TAG_FIELD].dropna().unique()
 
-        # Recherche de tags similaires
+        # Trouver les tags similaires pour chaque mot-clé
         similar_tags = set()
         for keyword in keywords:
             similar_tags.update(PlaylistService.find_similar_tags(keyword, tags))
 
-        # Filtrer les musiques avec les tags similaires
-        filtered_songs = data[data[TAG_FIELD].isin(similar_tags)]
-        print(f"Tags similaires : {similar_tags}")
+        # Filtrer les musiques correspondant aux tags similaires (globalement)
+        filtered_songs = data[data['tag'].isin(similar_tags)]
 
-        # Limiter le nombre de musiques
+        # Limiter le nombre de musiques seulement après avoir collecté tous les résultats
         if number is not None:
             filtered_songs = filtered_songs.head(number)
 
-        # Créer la réponse avec les IDs des musiques et les informations supplémentaires
+        # Construction de la réponse
         playlist_end_job = {
             "id": job_id,
             "userId": user_id,
-            "data": {
-                "musics": [song['id'] for song in filtered_songs.to_dict(orient='records')],
-                "name": name,
-                "description": description
-            }
+            "data": [{"idMusic": song['id']} for song in filtered_songs.to_dict(orient='records')]
         }
 
         return playlist_end_job
@@ -123,48 +131,31 @@ class PlaylistService:
     @staticmethod
     def find_similar_tags(user_input, tags):
         """
-        Trouve des tags similaires au mot-clé en utilisant les vecteurs GloVe.
+        Trouve des tags similaires au mot-clé utilisateur en utilisant SpaCy et WordNet (si disponible).
         """
-        lang = detect_language(user_input)
+        lang = detect_language(user_input)  # Détecter la langue du mot-clé
         print(f"Langue détectée pour '{user_input}': {lang}")
 
-        # Traduction si nécessaire
+        synonyms = set()
+        
+        # Traduire l'entrée utilisateur en anglais
         translated_input = translate_to_english(user_input, lang)
         print(f"Mot-clé traduit en anglais : {translated_input}")
 
+        # Trouver des synonymes en anglais
+        synonyms.update(find_synonyms(translated_input))
+
+        # Inclure le mot-clé lui-même dans les synonymes
+        synonyms.add(translated_input.lower())
+        print(f"Synonymes trouvés : {synonyms}")
+
         similar_tags = []
-        input_vector = SPACY_MODEL(translated_input.lower())
+        # Comparer les synonymes aux tags
+        for tag in tags:
+            tag_doc = SPACY_MODEL(tag.lower())
+            for synonym in synonyms:
+                if synonym in tag_doc.text:
+                    similar_tags.append(tag)
+                    break
 
-        # Vérifier si le vecteur existe
-        if not input_vector.has_vector:
-            print(f"Le mot '{translated_input}' n'a pas de vecteur.")
-            return []
-
-        # Seuils de similarité
-        seuils = [0.7, 0.6, 0.5]  # Teste plusieurs seuils pour plus de flexibilité
-
-        for seuil in seuils:
-            for tag in tags:
-                # Nettoyer et découper les tags composés
-                tag_words = tag.replace(" ", "").split(",")
-
-                # Comparaison de chaque mot dans le tag
-                for word in tag_words:
-                    tag_vector = SPACY_MODEL(word.lower())
-
-                    # Vérifier si le vecteur existe
-                    if not tag_vector.has_vector:
-                        continue
-
-                    similarity = input_vector.similarity(tag_vector)
-
-                    if similarity > seuil:
-                        similar_tags.append(tag)
-                        break  # Dès qu'un mot est similaire, passer au tag suivant
-
-            # Si des tags sont trouvés, arrêter les tests
-            if similar_tags:
-                break
-
-        print(f"Tags similaires trouvés : {similar_tags}")
         return similar_tags
