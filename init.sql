@@ -215,3 +215,191 @@ create table engine.public.user_roles
 );
 
 
+Ap0g
+ap0g
+En ligne
+
+Ap0g — Aujourd’hui à 10:02
+Sandro vient de me donner le nom des queues que je dois utiliser pour consommer et envoyer
+Ap0g — Aujourd’hui à 10:18
+active mq est pas intégré à l'appli ?
+tu le lances comment ton active mq ?
+Spiti — Aujourd’hui à 10:18
+Bahhh
+moi j'utilise le docker compose
+comme pour la lecture des tag, j'utilise la base de donnée
+Ap0g — Aujourd’hui à 10:19
+ah tu fais pas le run.py ?
+Spiti — Aujourd’hui à 10:19
+non, je lance le docker compose
+Ap0g — Aujourd’hui à 10:19
+ok je vais faire ça
+Spiti — Aujourd’hui à 10:19
+active mq est un logiciel a part
+et la base de données aussi
+Ap0g — Aujourd’hui à 10:20
+ouais mais qui est lancé via le docker compose non
+Spiti — Aujourd’hui à 10:20
+c'est sa
+et au final, le python aussi
+sa permet plus de stabilité dans les environment
+Ap0g — Aujourd’hui à 10:24
+=> ERROR [web  6/10] COPY ./models /repo/models
+t'as pas oublié de push un dossier ?
+Spiti — Aujourd’hui à 10:25
+retire la ligne du docker file 😅
+elle est devenu obsolete
+mais je ne l'ai pas remarqué car le fichier existe en local mais on ne peut pas push un dossier vide
+Ap0g — Aujourd’hui à 10:26
+ça marche bg
+Spiti — Aujourd’hui à 10:27
+une fois lancé, tu a un accès a activemq en localhost:8161 avec admin admin en identifiant et mdp. Tu peut ajouté des elements a la queue depuis cette endroit et voir les queue et leurs contenue
+Ap0g — Aujourd’hui à 10:29
+ok et pour lancer l'appli tu lances le run.py ?
+Spiti — Aujourd’hui à 10:29
+elle est automatiquement lancé
+il y a un contenueur avec l'appli
+elle sappel web
+Ap0g — Aujourd’hui à 10:31
+ok bon déjà j'ai bien accès au activemq
+tes listeners c'est dans data service ?
+Spiti — Aujourd’hui à 10:38
+dans le init de dans le fichier servic
+et la fonction listen est bien dans data service
+Ap0g — Aujourd’hui à 10:39
+ok je peux juste rajouter une ligne add subscriber dans ta fonction du coup ?
+par besoin que je me refasse une fonction
+Spiti — Aujourd’hui à 10:41
+oui, si tu a une fonction de listener qui prend les donnée brut de le queue dans le service 
+Ap0g — Aujourd’hui à 10:43
+okay
+Spiti — Aujourd’hui à 10:49
+J'ai corriger un de tes test mais le resultat du second est particulier :
+Image
+comment sa heureux est pareil que triste ?
+Ap0g — Aujourd’hui à 11:06
+très bonne question
+il envoie quoi en tag ? 
+Spiti — Aujourd’hui à 11:09
+le tag envoyer est happy et la music retourné a le tag sad
+similarité a 0.6
+Ap0g — Aujourd’hui à 11:09
+je regarde ça dès que j'ai fini avec les queues
+d'ailleurs comment je peux tester ? je sais pas trop comment géré l'appli depuis le docker et poster des messages dans active
+Spiti — Aujourd’hui à 11:11
+J'ai fait des mock pour cela
+Ap0g — Aujourd’hui à 11:17
+c'est à dire
+je veux pas dire le jeu de donnée mais juste comment je trigger ma fonction quoi
+Spiti — Aujourd’hui à 11:22
+dans le active mq
+Image
+tu va avoir un bouton send et un menu send en haut
+et sur docker tu a un container qui doit sappeler jamify-ai-web qui a les logs du python
+Ap0g — Aujourd’hui à 11:24
+ok je vais tester ça, merci
+Spiti — Aujourd’hui à 11:47
+https://github.com/DaddyAndYungeenCoders/jamify-ai/blob/develop/app/services/__init__.py
+Ap0g — Aujourd’hui à 16:10
+{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "userId": 42,
+    "data": {
+        "tags": ["energy"],
+        "name": "My Playlist",
+        "description": "A mix of my favorite genres."
+    }
+}
+Spiti — Aujourd’hui à 16:38
+
+
+INSERT INTO public.tag (tag_id, tag_label) VALUES (1, 'Happy');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (2, 'Relax');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (4, 'Love');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (5, 'Angry');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (6, 'Motivating');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (7, 'Dark');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (8, 'Energetic');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (9, 'Festive');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (10, 'Sad');
+
+
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (1, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/1e236f9ce35497f1daf72bf24ef356f71e3c0a91?cid=529623fe55c9470c9267eb399357c9d2', 'DEAR41183102', 'None', 'Break It - Original');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (2, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/803b352a2b4c1fe6b79c5efa8b5c87edc40fe750?cid=529623fe55c9470c9267eb399357c9d2', 'GBKQU1346823', 'None', 'Cassiopeia - DefTunez Remix');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (3, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/a4620f2acb0627d5afce13daff2edb5b09ada472?cid=529623fe55c9470c9267eb399357c9d2', 'DEAR42258144', 'None', 'All Night Long - Extended');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (4, 'Westside Gunn', '0.475', null, null, '73.911', 'Big AL (feat. Rome Streetz)');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (5, 'Michael Jackson', '0.701', null, null, '124.047', 'Blue Gangsta');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (6, 'Stacey Kent', '0.233', null, null, '88.099', 'Au coin du monde');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (7, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/11a5bef9830bfa7dee5527c800a48ece13870d78?cid=529623fe55c9470c9267eb399357c9d2', 'US83Z2044532', 'None', 'Jupiter''s Moon - EDLands Remix');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (8, 'Soundgarden', '0.819', null, null, '131.154', 'Birth Ritual');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (9, 'Jimmy Buffett', '0.8', null, null, '105.711', 'Back to the Island');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (10, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/abff25e42acb7aeb4cc9f33b16833ac3b98abb2f?cid=529623fe55c9470c9267eb399357c9d2', 'DEBW21900209', 'None', 'Flamingo Ride');
+
+
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (2, 5);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (3, 7);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (4, 2);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (5, 9);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (6, 1);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (7, 4);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (8, 6);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (9, 10);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (10, 8);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (1, 6);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (2, 4);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (3, 1);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (4, 9);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (6, 8);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (7, 10);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (8, 2);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (9, 5);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (10, 7);
+Réduire
+message.txt
+5 Ko
+Spiti — Aujourd’hui à 17:27
+tu l'a merge les get request on queue ?
+﻿
+
+
+INSERT INTO public.tag (tag_id, tag_label) VALUES (1, 'Happy');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (2, 'Relax');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (4, 'Love');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (5, 'Angry');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (6, 'Motivating');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (7, 'Dark');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (8, 'Energetic');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (9, 'Festive');
+INSERT INTO public.tag (tag_id, tag_label) VALUES (10, 'Sad');
+
+
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (1, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/1e236f9ce35497f1daf72bf24ef356f71e3c0a91?cid=529623fe55c9470c9267eb399357c9d2', 'DEAR41183102', 'None', 'Break It - Original');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (2, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/803b352a2b4c1fe6b79c5efa8b5c87edc40fe750?cid=529623fe55c9470c9267eb399357c9d2', 'GBKQU1346823', 'None', 'Cassiopeia - DefTunez Remix');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (3, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/a4620f2acb0627d5afce13daff2edb5b09ada472?cid=529623fe55c9470c9267eb399357c9d2', 'DEAR42258144', 'None', 'All Night Long - Extended');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (4, 'Westside Gunn', '0.475', null, null, '73.911', 'Big AL (feat. Rome Streetz)');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (5, 'Michael Jackson', '0.701', null, null, '124.047', 'Blue Gangsta');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (6, 'Stacey Kent', '0.233', null, null, '88.099', 'Au coin du monde');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (7, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/11a5bef9830bfa7dee5527c800a48ece13870d78?cid=529623fe55c9470c9267eb399357c9d2', 'US83Z2044532', 'None', 'Jupiter''s Moon - EDLands Remix');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (8, 'Soundgarden', '0.819', null, null, '131.154', 'Birth Ritual');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (9, 'Jimmy Buffett', '0.8', null, null, '105.711', 'Back to the Island');
+INSERT INTO public.music (music_id, music_author, music_energy, music_image_src, music_isrc, music_tempo, music_title) VALUES (10, 'unknown', 'None', 'https://p.scdn.co/mp3-preview/abff25e42acb7aeb4cc9f33b16833ac3b98abb2f?cid=529623fe55c9470c9267eb399357c9d2', 'DEBW21900209', 'None', 'Flamingo Ride');
+
+
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (2, 5);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (3, 7);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (4, 2);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (5, 9);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (6, 1);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (7, 4);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (8, 6);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (9, 10);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (10, 8);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (1, 6);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (2, 4);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (3, 1);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (4, 9);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (6, 8);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (7, 10);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (8, 2);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (9, 5);
+INSERT INTO public.music_tag (music_id, tag_id) VALUES (10, 7);

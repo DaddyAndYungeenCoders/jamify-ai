@@ -79,6 +79,23 @@ class TagRepository:
         finally:
             return tag
 
+    def private_get_all_tags(self, sql, selector):
+        tag = []
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (selector,))
+                row = cur.fetchall()
+                for r in row:
+                    tag.append(TagDTO(
+                        id=r[0],
+                        name=r[1]
+                    ))
+        except (Exception, psycopg2.DatabaseError) as e:
+            logger.error(e)
+        finally:
+            return tag
+
+
     def private_get_link_music_tag(self, sql, selector):
         tag = []
         try:
@@ -104,7 +121,7 @@ class TagRepository:
 
     def get_all_tags(self):
         sql = """SELECT tag_id, tag_label FROM tag"""
-        return self.private_get_tag(sql, "")
+        return self.private_get_all_tags(sql, "")
 
     def add_tag(self, label: str) -> TagDTO:
         sql = """INSERT INTO tag(tag_label) VALUES(%s) RETURNING tag_id, tag_label"""
@@ -150,3 +167,12 @@ class TagRepository:
         for link in links:
             tags.append(self.get_tag_by_id(link.tag_id).name)
         return tags
+
+    def get_musics_by_tag(self, tag):
+        sql = """SELECT music_id,tag_id FROM music_tag WHERE tag_id = %s"""
+        links = self.private_get_link_music_tag(sql, self.get_tag_by_name(tag).id)
+        music = []
+        for link in links:
+            music.append(link.music_id)
+        return music
+        pass
