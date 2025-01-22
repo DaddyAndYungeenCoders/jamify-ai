@@ -20,6 +20,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
 import unittest
@@ -52,7 +62,6 @@ class TestMusicService(unittest.TestCase):
     @patch('app.services.music_service.MusicDTO')
     def test_save_music(self, MockMusicDTO):
         # Arrange
-        mock_music_instance = MockMusicDTO.return_value
         self.repository_mock.music_repository.add_music.return_value = 1  # Simulate returning a music ID
 
         # Act
@@ -93,7 +102,15 @@ class TestMusicService(unittest.TestCase):
         mock_repository_instance.music_repository.add_music.return_value = 1
 
         # Act
-        result = self.music_service.listen('{"name": "Test Song", "artists": "Test Artist", "isrc": "US1234567890", "preview_url": "http://example.com/image.jpg", "tempo": 120, "energy": 0.8, "lyrics": "Test lyrics"}')
+        result = self.music_service.listen('{'
+                                           '"name": "Test Song", '
+                                           '"artists": "Test Artist", '
+                                           '"isrc": "US1234567890", '
+                                           '"preview_url": "http://example.com/image.jpg", '
+                                           '"tempo": 120, '
+                                           '"energy": 0.8, '
+                                           '"lyrics": "Test lyrics"'
+                                           '}')
 
         # Assert
         self.assertTrue(result)
@@ -112,6 +129,7 @@ class TestMusicService(unittest.TestCase):
 
         # Assert
         # self.assertIsInstance(result, ValueError)
+
 
 if __name__ == '__main__':
     unittest.main()
