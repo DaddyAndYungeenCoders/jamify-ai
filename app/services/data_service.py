@@ -20,6 +20,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
 from urllib.parse import urlparse
@@ -38,7 +48,6 @@ class DataService:
 
     def import_data(self, tagger_dto):
         self.stomp_controller = controllers.stomp
-        self.stomp_controller.connected()
         csv_files = []
         os.makedirs(self.download_folder, exist_ok=True)
         # Télécharger et vérifier chaque fichier
@@ -47,8 +56,17 @@ class DataService:
             file_path = self.download_data(dataset['url'])
             if file_path and self.is_csv(file_path):
                 csv_files.append(CsvFile(file_path, dataset['spotid'], dataset['header']))
-        df_data = self.merge_data(csv_files)
-        self.send_music(df_data)
+
+        try:
+            # Merge des fichiers
+            df_data = self.merge_data(csv_files)
+
+            # Envoi via STOMP
+            self.send_music(df_data)
+
+        except Exception as e:
+            logger.error(f"Processing error: {e}")
+
         pass
 
 
@@ -82,31 +100,66 @@ class DataService:
             logger.error(f"Erreur de téléchargement du fichier {url} : {e}")
             return None
 
-    def merge_data(self, csv_files):
-        """
-            Fusionne plusieurs fichiers CSV en les croisant sur les colonnes spécifiées dans `merge_columns`.
+    @staticmethod
+    def merge_data(csv_files, chunk_size: int = 50000) -> pd.DataFrame:
+        """Fusionne les fichiers CSV en optimisant la mémoire."""
 
-            :param files: Liste de chemins vers les fichiers CSV
-            :param merge_columns: Liste des colonnes à utiliser pour la fusion, indexées selon l'ordre des fichiers
-            :return: DataFrame fusionné
-            """
-        # Lire le premier fichier CSV
-        logger.info(csv_files[0].file_path)
-        merged_df = pd.read_csv(csv_files[0].file_path)
+        try:
+            # Chargement des chunks
+            df1_chunks = pd.read_csv(csv_files[0].file_path)
+            df2_chunks = pd.read_csv(csv_files[1].file_path)
 
-        # Fusionner chaque fichier suivant en fonction des colonnes de fusion spécifiées
-        for i, csv_file in enumerate(csv_files[1:]):
-            df = pd.read_csv(csv_file.file_path)
-            column_to_merge_on = csv_file.spot_id  # La colonne de fusion est spécifiée pour chaque fichier
-            merged_df = pd.merge(merged_df, df, left_on=csv_files[0].spot_id, right_on=column_to_merge_on, how='inner')
+            merged_dataframes = []
 
-        return merged_df
+            #for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
+                # Merge des chunks
+            merged_chunk = pd.merge(
+                df1_chunks,
+                df2_chunks,
+                left_on=csv_files[0].spot_id,
+                right_on=csv_files[1].spot_id,
+                how='left'
+            )
+            merged_dataframes.append(merged_chunk)
+
+            # Concaténation finale
+            final_merged_df = pd.concat(merged_dataframes, ignore_index=True)
+
+            logger.info(f"Merge completed. Total rows: {len(final_merged_df)}")
+            return final_merged_df
+
+        except Exception as e:
+            logger.error(f"Merge error: {e}")
+            raise
 
     def send_music(self, merged_df):
-        self.stomp_controller.connected()
-        for index, row in merged_df.iterrows():
-            self.stomp_controller.send_message("com.jamify.ai.tag-gen", row.to_json())
-        pass
+        """
+        Envoi des données via STOMP avec commit
+
+        :param merged_df: DataFrame mergé à envoyer
+        """
+        try:
+            #commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
+
+            # Envoi ligne par ligne
+            with self.stomp_controller.create_transaction("com.jamify.ai.tag-gen") as transaction:
+                for _, row in merged_df.iterrows():
+                    transaction.send(row.to_json())
+                    #commit.send(row.to_json())
+                    #self.stomp_controller.send_message("com.jamify.ai.tag-gen",row.to_json())
+                    pass
+
+            # Commit de la transaction
+            #del commit
+            logger.info("All messages sent and committed successfully")
+
+        except Exception as e:
+            logger.error(f"STOMP send error: {e}")
+
+
+
+
+
 
 
 class CsvFile:

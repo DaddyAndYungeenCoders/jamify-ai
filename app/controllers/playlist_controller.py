@@ -43,7 +43,6 @@ def generate_playlist():
 
         # Envoi de la réponse dans la queue STOMP
         destination = "/queue/playlist"  # Nom de la queue STOMP
-        stomp_controller.connected()
         stomp_controller.send_message(destination, str(playlist_end_job))
 
         return jsonify({"message": "Playlist générée et envoyée dans la queue STOMP.", "playlist": playlist_end_job}), 200

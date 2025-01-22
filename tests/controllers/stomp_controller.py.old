@@ -60,6 +60,7 @@ class TestStompController(unittest.TestCase):
 
         # Retourner la connexion mockée lorsque stomp.Connection() est appelée
         mock_stomp_connection.return_value = self.mock_connection
+        mock_stomp_connection.connect.return_value = self.mock_connection
 
         # Instancier le contrôleur
         self.controller = StompController()
@@ -67,7 +68,7 @@ class TestStompController(unittest.TestCase):
     def test_connected(self):
         """Test that the controller connects to the stomp server and subscribes."""
         # Trigger the connected method
-        self.controller.connected()
+        self.controller._init_connection()
 
         # Check that the connect method was called on the mock connection
         self.mock_connection.connect.assert_called_once_with('myuser', 'mypwd', wait=True)
@@ -80,14 +81,15 @@ class TestStompController(unittest.TestCase):
         mock_listener = MagicMock()  # Mock the listener
 
         # Add a subscriber
+        self.controller.is_connected = True
         self.controller.add_subscriber('queue1', mock_listener)
 
         # Assert that the subscriber was added to the list
-        self.assertEqual(len(self.controller.list_subscribers), 1)
+        self.assertEqual(len(self.controller.subscribers), 1)
 
         # Check that the subscribe method was called on the mock connection with correct parameters
         self.mock_connection.subscribe.assert_called_once_with(
-            destination='queue1', id=self.controller.list_subscribers[0].str_id(), ack='auto'
+            destination='queue1', id=self.controller.subscribers[0]["destination"], ack='auto'
         )
 
     def test_send_message(self):
@@ -108,7 +110,7 @@ class TestStompController(unittest.TestCase):
         listener.on_disconnected()
 
         # Check if the connect method was called after disconnection
-        self.mock_connection.connect.assert_called()
+        self.mock_connection._connect_with_retry.assert_called()
 
 
 if __name__ == '__main__':

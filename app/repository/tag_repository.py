@@ -41,6 +41,7 @@
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
 
+
 import psycopg2
 
 from app.dto.music_tag_dto import MusicTagDTO
@@ -84,26 +85,29 @@ class TagRepository:
             return tag
 
     def get_tag_by_id(self, tag_id):
-        sql = """SELECT tag_id, tag_label FROM tag_entity WHERE tag_id = %s"""
+        sql = """SELECT tag_id, tag_label FROM tag WHERE tag_id = %s"""
         return self.private_get_tag(sql, tag_id)
 
-    def get_tag_by_name(self, name):
-        sql = """SELECT tag_id, tag_label FROM tag_entity WHERE tag_label = %s"""
+    def get_tag_by_name(self, name: str) -> TagDTO:
+        sql = """SELECT tag_id, tag_label FROM tag WHERE tag_label = %s"""
         return self.private_get_tag(sql, name)
 
     def get_all_tags(self):
-        sql = """SELECT tag_id, tag_label FROM tag_entity"""
+        sql = """SELECT tag_id, tag_label FROM tag"""
         return self.private_get_tag(sql, "")
 
-    def add_tag(self, label: str):
-        sql = """INSERT INTO tag_entity(tag_label) VALUES(%s) RETURNING tag_id"""
+    def add_tag(self, label: str)-> TagDTO:
+        sql = """INSERT INTO tag(tag_label) VALUES(%s) RETURNING tag_id, tag_label"""
         tag_id = None
         try:
             with self.conn.cursor() as cur:
                 cur.execute(sql, (label,))
                 rows = cur.fetchone()
                 if rows:
-                    tag_id = rows[0]
+                    tag_id = TagDTO(
+                        id=rows[0],
+                        name=rows[1]
+                    )
                 self.conn.commit()
         except (Exception, psycopg2.DatabaseError) as e:
             logger.error(e)
@@ -120,10 +124,13 @@ class TagRepository:
             logger.error(e)
 
     def add_link_music_tag(self, music_id, tag_name):
-        tag_id = self.get_tag_by_name(tag_name)
-        if not tag_id:
-            tag_id = self.add_tag(tag_name)
-        self.add_music_tag(music_id, tag_id)
+        tag = self.get_tag_by_name(tag_name)
+        if not tag:
+            tag = self.add_tag(tag_name)
+        exist = self.get_tag_by_music(music_id)
+        if tag_name in exist:
+            return
+        self.add_music_tag(music_id, tag.id)
         pass
 
     def get_tag_by_music(self, music_id):
