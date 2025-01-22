@@ -134,14 +134,27 @@ class TagRepository:
             logger.error(e)
 
     def add_link_music_tag(self, music_id, tag_name):
+        # Vérifiez si le tag existe
         tag = self.get_tag_by_name(tag_name)
         if not tag:
-            tag = self.add_tag(tag_name)
+            logger.error(f"Tag non trouvé pour : {tag_name}")
+            tag = self.add_tag(tag_name)  # Créez le tag si non trouvé
+
+        # Récupérez les tags existants associés à la musique
         exist = self.get_tag_by_music(music_id)
+        if not exist:  # Si la liste est vide ou None, initialisez-la
+            exist = []
+        
         if tag_name in exist:
+            logger.info(f"Le tag {tag_name} existe déjà pour la musique {music_id}.")
             return
-        self.add_music_tag(music_id, tag.id)
-        pass
+
+        # Ajoutez le lien musique-tag
+        if tag:  # Assurez-vous que tag n'est pas None
+            self.add_music_tag(music_id, tag.id)
+        else:
+            logger.error(f"Impossible d'ajouter le lien pour le tag : {tag_name}.")
+
 
     def get_tag_by_music(self, music_id):
         sql = """SELECT music_id,tag_id FROM music_tag WHERE music_id = %s"""

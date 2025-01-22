@@ -4,13 +4,12 @@ import spacy
 import json
 import pandas as pd
 import langid
+from app.dto.music_dto import MusicDTO
+from app.utils.logger import logger
+from app.repository import Repository
 from googletrans import Translator
-
-from app.utils.constants import TAG_FIELD
-
 from app import controllers
 from app.utils.constants import TAG_FIELD
-from app.utils.logger import logger
 
 # URL du bucket S3 contenant les vecteurs SpaCy
 S3_BASE_URL = "https://jamifybucket.s3.eu-north-1.amazonaws.com/glove_vectors"
@@ -92,39 +91,61 @@ def translate_to_english(text, lang):
 
 class PlaylistService:
     @staticmethod
-    def generate_playlist(csv_file, keywords, name, description, number=None, job_id=None, user_id=None):
+    def generate_playlist(keywords, name, description, number=None, job_id=None, user_id=None):
         """
-        Génère une playlist basée sur la similarité des mots-clés avec les tags.
+        Génère une playlist basée sur la similarité des mots-clés avec les tags depuis la base de données.
         """
-        # Chargement des données CSV
-        data = pd.read_csv(csv_file)
-        tags = data[TAG_FIELD].dropna().unique()
+        # Connexion à la base de données
+        database = Repository()
+        database.connect()
+        if not database.music_repository:
+            logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO FETCH MUSIC")
+            return None
+        if not database.tags_repository:
+            logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO FETCH TAGS")
+            return None
 
-        # Recherche de tags similaires
-        similar_tags = set()
-        for keyword in keywords:
-            similar_tags.update(PlaylistService.find_similar_tags(keyword, tags))
+        try:
+            # Récupération des tags disponibles
+            tags = database.tags_repository.get_all_tags()
+            tags = [tag['name'] for tag in tags]  
+            
+            # Recherche de tags similaires
+            similar_tags = set()
+            for keyword in keywords:
+                similar_tags.update(PlaylistService.find_similar_tags(keyword, tags))
 
-        # Filtrer les musiques avec les tags similaires
-        filtered_songs = data[data[TAG_FIELD].isin(similar_tags)]
-        print(f"Tags similaires : {similar_tags}")
+            logger.info(f"Tags similaires trouvés : {similar_tags}")
 
-        # Limiter le nombre de musiques
-        if number is not None:
-            filtered_songs = filtered_songs.head(number)
+            # Récupération des musiques correspondant aux tags similaires
+            filtered_songs = database.music_repository.get_music_by_tags(similar_tags)
 
-        # Créer la réponse avec les IDs des musiques et les informations supplémentaires
-        playlist_end_job = {
-            "id": job_id,
-            "userId": user_id,
-            "data": {
-                "musics": [song['id'] for song in filtered_songs.to_dict(orient='records')],
-                "name": name,
-                "description": description
+            if not filtered_songs:
+                logger.info("Aucune musique trouvée pour les tags similaires.")
+                return None
+
+            # Limiter le nombre de musiques
+            if number is not None:
+                filtered_songs = filtered_songs[:number]
+
+            # Créer la réponse avec les IDs des musiques et les informations supplémentaires
+            playlist_end_job = {
+                "id": job_id,
+                "userId": user_id,
+                "data": {
+                    "musics": [song['id'] for song in filtered_songs],
+                    "name": name,
+                    "description": description
+                }
             }
-        }
 
-        return playlist_end_job
+            return playlist_end_job
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération de la playlist : {str(e)}")
+            return None
+        finally:
+            database.disconnect()
 
     @staticmethod
     def find_similar_tags(user_input, tags):
@@ -132,17 +153,17 @@ class PlaylistService:
         Trouve des tags similaires au mot-clé en utilisant les vecteurs GloVe.
         """
         lang = detect_language(user_input)
-        print(f"Langue détectée pour '{user_input}': {lang}")
+        logger.info(f"Langue détectée pour '{user_input}': {lang}")
 
         # Traduction si nécessaire
         translated_input = translate_to_english(user_input, lang)
-        print(f"Mot-clé traduit en anglais : {translated_input}")
+        logger.info(f"Mot-clé traduit en anglais : {translated_input}")
 
         similar_tags = []
         input_vector = SPACY_MODEL(translated_input.lower())
 
         if not input_vector.has_vector:
-            print(f"Le mot '{translated_input}' n'a pas de vecteur.")
+            logger.warning(f"Le mot '{translated_input}' n'a pas de vecteur.")
             return []
 
         seuils = [0.7, 0.6, 0.5]
@@ -165,7 +186,7 @@ class PlaylistService:
             if similar_tags:
                 break
 
-        print(f"Tags similaires trouvés : {similar_tags}")
+        logger.info(f"Tags similaires trouvés : {similar_tags}")
         return similar_tags
 
     @staticmethod
@@ -173,36 +194,35 @@ class PlaylistService:
         """
         Fonction pour récupérer le message de la queue, générer la playlist, et publier le résultat.
         """
-
-
         try:
-            # Décoder le message reçu (en supposant que le message est au format JSON)
             playlist_request = json.loads(message)
-            print(f"Message reçu : {playlist_request}")
+            logger.info(f"Message reçu : {playlist_request}")
 
             # Extraire les informations nécessaires
             job_id = playlist_request.get('id')
             user_id = playlist_request.get('userId')
-            keywords = playlist_request.get('keywords', [])
-            name = playlist_request.get('name', 'Default Playlist Name')
-            description = playlist_request.get('description', '')
+            data = playlist_request.get('data')
+            keywords = data.get('tags')
+            name = data.get('name')
+            description = data.get('description')
 
-            print(f"Traitement de la playlist pour Job ID: {job_id}, User ID: {user_id}")
-            print(f"Keywords: {keywords}, Name: {name}, Description: {description}")
+            logger.info(f"Traitement de la playlist pour Job ID: {job_id}, User ID: {user_id}")
+            logger.info(f"Keywords: {keywords}, Name: {name}, Description: {description}")
 
             # Vérifie si les champs obligatoires sont présents
             if not job_id or not user_id:
                 raise ValueError("Les champs 'id' et 'userId' sont obligatoires dans le message.")
-            csv_file = "app/playlist/music_tags_realistic.csv"
 
             # Générer la playlist
             playlist_end_job = PlaylistService.generate_playlist(
-                csv_file, keywords, name, description, job_id=job_id, user_id=user_id
+                keywords, name, description, job_id=job_id, user_id=user_id
             )
 
-            stomp = controllers.stomp
+            if not playlist_end_job:
+                logger.error("Échec de la génération de la playlist.")
+                return
 
-            logger.info(f"Playlist générée : {playlist_end_job}")
+            stomp = controllers.stomp
 
             # Publier le résultat dans la queue cible
             stomp.send_message(
@@ -213,6 +233,6 @@ class PlaylistService:
             logger.info(f"Message envoyé à la queue 'com.jamify.orchestrator.playlist-done': {playlist_end_job}")
 
         except json.JSONDecodeError:
-            print(f"Erreur de décodage JSON pour le message : {message}")
+            logger.error(f"Erreur de décodage JSON pour le message : {message}")
         except Exception as e:
-            print(f"Erreur lors du traitement du message : {e}")
+            logger.error(f"Erreur lors du traitement du message : {e}")
