@@ -183,12 +183,10 @@ class PlaylistService:
             # Extraire les informations nécessaires
             job_id = playlist_request.get('id')
             user_id = playlist_request.get('userId')
-            keywords = playlist_request.get('keywords', [])
-            name = playlist_request.get('name', 'Default Playlist Name')
-            description = playlist_request.get('description', '')
-
-            print(f"Traitement de la playlist pour Job ID: {job_id}, User ID: {user_id}")
-            print(f"Keywords: {keywords}, Name: {name}, Description: {description}")
+            data = playlist_request.get('data')
+            keywords = data.get('tags')
+            name = data.get('name')
+            description = data.get('description')
 
             # Vérifie si les champs obligatoires sont présents
             if not job_id or not user_id:
