@@ -113,6 +113,8 @@ class DataService:
     def merge_data(csv_files, chunk_size: int = 50000) -> pd.DataFrame:
         """Fusionne les fichiers CSV en optimisant la mémoire."""
 
+        logger.info("start to merge")
+
         try:
             # Chargement des chunks
             df1_chunks = pd.read_csv(csv_files[0].file_path)
@@ -130,6 +132,8 @@ class DataService:
                 how='left'
             )
             merged_dataframes.append(merged_chunk)
+
+            logger.info("Merging in progress")
 
             # Concaténation finale
             final_merged_df = pd.concat(merged_dataframes, ignore_index=True)
