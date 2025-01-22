@@ -95,21 +95,32 @@ class PlaylistService:
         """
         Génère une playlist basée sur la similarité des mots-clés avec les tags depuis la base de données.
         """
+        logger.debug(f"Appel de generate_playlist avec : keywords={keywords}, name={name}, description={description}, number={number}, job_id={job_id}, user_id={user_id}")
+
         # Connexion à la base de données
         database = Repository()
-        database.connect()
-        if not database.music_repository:
-            logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO FETCH MUSIC")
-            return None
-        if not database.tags_repository:
-            logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO FETCH TAGS")
-            return None
-
         try:
+            database.connect()
+            logger.debug("Connexion à la base de données réussie.")
+
+            if not database.music_repository:
+                logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO FETCH MUSIC")
+                return None
+            if not database.tags_repository:
+                logger.error("FAILED TO CONNECT TO DATABASE, FAILED TO FETCH TAGS")
+                return None
+
             # Récupération des tags disponibles
             tags = database.tags_repository.get_all_tags()
-            tags = [tag['name'] for tag in tags]  
-            
+            logger.debug(f"Tags récupérés depuis la base de données : {tags}")
+
+            if tags is None:
+                logger.error("Les tags sont None.")
+                return None
+
+            tag_labels = [tag.name for tag in tags]
+            logger.debug(f"Noms des tags extraits : {tag_labels}")
+
             # Recherche de tags similaires
             similar_tags = set()
             for keyword in keywords:
@@ -118,7 +129,14 @@ class PlaylistService:
             logger.info(f"Tags similaires trouvés : {similar_tags}")
 
             # Récupération des musiques correspondant aux tags similaires
-            filtered_songs = database.music_repository.get_music_by_tags(similar_tags)
+            filtered_songs = []
+            for tag in similar_tags:
+                # Recherche des musiques pour chaque tag
+                songs_for_tag = database.tags_repository.get_musics_by_tag(tag)
+                if songs_for_tag:
+                    filtered_songs.extend(songs_for_tag)
+            
+            logger.debug(f"Musiques récupérées pour les tags similaires : {filtered_songs}")
 
             if not filtered_songs:
                 logger.info("Aucune musique trouvée pour les tags similaires.")
@@ -128,24 +146,25 @@ class PlaylistService:
             if number is not None:
                 filtered_songs = filtered_songs[:number]
 
-            # Créer la réponse avec les IDs des musiques et les informations supplémentaires
             playlist_end_job = {
                 "id": job_id,
                 "userId": user_id,
                 "data": {
-                    "musics": [song['id'] for song in filtered_songs],
+                    "musics": filtered_songs,
                     "name": name,
                     "description": description
                 }
             }
-
+            logger.debug(f"Playlist générée avec succès : {playlist_end_job}")
             return playlist_end_job
 
         except Exception as e:
-            logger.error(f"Erreur lors de la génération de la playlist : {str(e)}")
+            logger.error(f"Erreur lors de la génération de la playlist : {e}")
             return None
         finally:
             database.disconnect()
+
+
 
     @staticmethod
     def find_similar_tags(user_input, tags):
@@ -170,7 +189,8 @@ class PlaylistService:
 
         for seuil in seuils:
             for tag in tags:
-                tag_words = tag.replace(" ", "").split(",")
+                # Utilisation de l'attribut 'name' du TagDTO
+                tag_words = tag.name.replace(" ", "").split(",")  # Accède au nom du tag
                 for word in tag_words:
                     tag_vector = SPACY_MODEL(word.lower())
 
@@ -180,7 +200,7 @@ class PlaylistService:
                     similarity = input_vector.similarity(tag_vector)
 
                     if similarity > seuil:
-                        similar_tags.append(tag)
+                        similar_tags.append(tag.name)  # Ajoute le nom du tag similaire
                         break
 
             if similar_tags:
