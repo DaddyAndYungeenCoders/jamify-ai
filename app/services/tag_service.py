@@ -10,11 +10,23 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
+import zipfile
 from typing import List, Dict, Tuple
 
 import numpy as np
+import requests
 import transformers
 
 from app.utils.logger import logger
@@ -110,6 +122,10 @@ class TagService:
             if self._check_tag_match(music_data, tag_criteria):
                 matching_tags.append(tag_name)
 
+        elements = os.listdir(self.model_place)
+        if len(elements) < 2:
+            self._download_model()
+
         model_dir = self.model_place
         tokenizer = transformers.AutoTokenizer.from_pretrained(model_dir)
         model = transformers.AutoModelForSequenceClassification.from_pretrained(model_dir)
@@ -121,6 +137,33 @@ class TagService:
                 matching_tags.append(emotion['label'])
 
         return matching_tags
+
+    def _download_model(self):
+        os.makedirs(self.model_place, exist_ok=True)
+        nom_fichier_zip = os.path.join(self.model_place, 'fichier.zip')
+
+        try:
+            logger.debug("Début de téléchargement du model terminé.")
+            response = requests.get("https://jamify.blob.core.windows.net/model/pytorch_model.zip")
+            response.raise_for_status()  # Vérifie si la requête a réussi
+            with open(nom_fichier_zip, 'wb') as f:
+                f.write(response.content)
+            logger.debug("Téléchargement du model terminé.")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erreur lors du téléchargement : {e}")
+            return
+
+        # Extraire le fichier zip
+        try:
+            logger.debug(f"Extraction de {nom_fichier_zip}...")
+            with zipfile.ZipFile(nom_fichier_zip, 'r') as zip_ref:
+                zip_ref.extractall(self.model_place)
+            logger.debug("Extraction terminée.")
+        except zipfile.BadZipFile:
+            logger.error("Erreur : le fichier téléchargé n'est pas un fichier zip valide.")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'extraction : {e}")
+        pass
 
 
     def _check_tag_match(
