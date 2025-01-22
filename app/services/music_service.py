@@ -97,6 +97,9 @@ class MusicService:
 
         self.dataset_dto = QueueMusicTagDTO().load(validated_data)
 
+        if self.dataset_dto['isrc'] is None:
+            return
+
         # Traitement des données validées
         # Save music in database
         database = Repository()

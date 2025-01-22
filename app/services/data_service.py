@@ -117,23 +117,22 @@ class DataService:
 
         try:
             # Chargement des chunks
-            df1_chunks = pd.read_csv(csv_files[0].file_path)
-            df2_chunks = pd.read_csv(csv_files[1].file_path)
+            df1_chunks = pd.read_csv(csv_files[0].file_path, chunksize=chunk_size)
+            df2_chunks = pd.read_csv(csv_files[1].file_path, chunksize=chunk_size)
 
+            # merged_dataframes =df1_chunks.set_index(csv_files[0].spot_id).join(df2_chunks.set_index(csv_files[1].spot_id), how='left')
             merged_dataframes = []
-
-            # for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
-            # Merge des chunks
-            merged_chunk = pd.merge(
-                df1_chunks,
-                df2_chunks,
-                left_on=csv_files[0].spot_id,
-                right_on=csv_files[1].spot_id,
-                how='left'
-            )
-            merged_dataframes.append(merged_chunk)
-
-            logger.info("Merging in progress")
+            for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
+                # Merge des chunks
+                dataframes = pd.merge(
+                    chunk1,
+                    chunk2,
+                    left_on=csv_files[0].spot_id,
+                    right_on=csv_files[1].spot_id,
+                    how='left'
+                )
+            merged_dataframes.append(dataframes)
+            # logger.info("Merging in progress")
 
             # Concaténation finale
             final_merged_df = pd.concat(merged_dataframes, ignore_index=True)
