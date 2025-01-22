@@ -1,3 +1,8 @@
+import os
+import requests
+import spacy
+from googletrans import Translator
+import pandas as pd
 import langid
 from flask import jsonify
 from app.utils.constants import SPACY_MODEL_NAME, TAG_FIELD
