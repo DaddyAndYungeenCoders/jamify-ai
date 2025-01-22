@@ -1,25 +1,16 @@
-#  Copyright (c) 2024, LAPETITTE Matthieu
-#  Tous droits réservés.
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-
 import os
-
-import langid
-import pandas as pd
 import requests
 import spacy
+import json
+import pandas as pd
+import langid
 from googletrans import Translator
 
 from app.utils.constants import TAG_FIELD
+
+from app import controllers
+from app.utils.constants import TAG_FIELD
+from app.utils.logger import logger
 
 # URL du bucket S3 contenant les vecteurs SpaCy
 S3_BASE_URL = "https://jamifybucket.s3.eu-north-1.amazonaws.com/glove_vectors"
@@ -37,38 +28,37 @@ GLOVE_VECTOR_FILES = [
     "vocab/vectors.cfg",
 ]
 
-
-def download_glove_vectors(base_url, target_dir, files):
-    """
-    Télécharge les fichiers nécessaires depuis un bucket S3.
-    """
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
-
-    for file_name in files:
-        file_url = f"{base_url}/{file_name}"
-        local_file_path = os.path.join(target_dir, file_name.replace("/", os.sep))
-
-        # Créer les sous-dossiers si nécessaire
-        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
-
-        if not os.path.exists(local_file_path):
-            print(f"Téléchargement de {file_name}...")
-            response = requests.get(file_url, stream=True)
-            if response.status_code == 200:
-                with open(local_file_path, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=1024):
-                        f.write(chunk)
-                print(f"{file_name} téléchargé avec succès.")
-            else:
-                raise RuntimeError(f"Impossible de télécharger {file_name}. Erreur {response.status_code}.")
-        else:
-            print(f"{file_name} est déjà présent.")
-
-
-# Télécharger tous les fichiers nécessaires
-download_glove_vectors(S3_BASE_URL, SPACY_MODEL_DIR, GLOVE_VECTOR_FILES)
-
+# def download_glove_vectors(base_url, target_dir, files):
+#    """
+#    Télécharge les fichiers nécessaires depuis un bucket S3.
+#    """
+#    if not os.path.exists(target_dir):
+#        os.makedirs(target_dir)
+#
+#    for file_name in files:
+#        file_url = f"{base_url}/{file_name}"
+#        local_file_path = os.path.join(target_dir, file_name.replace("/", os.sep))
+#
+#        # Créer les sous-dossiers si nécessaire
+#        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+#
+#        if not os.path.exists(local_file_path):
+#            print(f"Téléchargement de {file_name}...")
+#            response = requests.get(file_url, stream=True)
+#            if response.status_code == 200:
+#                with open(local_file_path, "wb") as f:
+#                    for chunk in response.iter_content(chunk_size=1024):
+#                        f.write(chunk)
+#                print(f"{file_name} téléchargé avec succès.")
+#            else:
+#                raise RuntimeError(f"Impossible de télécharger {file_name}. Erreur {response.status_code}.")
+#        else:
+#            print(f"{file_name} est déjà présent.")
+#
+#
+## Télécharger tous les fichiers nécessaires
+# download_glove_vectors(S3_BASE_URL, SPACY_MODEL_DIR, GLOVE_VECTOR_FILES)
+#
 # Charger les vecteurs convertis dans SpaCy
 SPACY_MODEL = spacy.load(SPACY_MODEL_DIR)
 
@@ -76,16 +66,14 @@ SPACY_MODEL = spacy.load(SPACY_MODEL_DIR)
 if not SPACY_MODEL("music").has_vector:
     raise RuntimeError("Les vecteurs GloVe ne sont pas chargés correctement.")
 else:
-    print("Les vecteurs GloVe sont bien chargés dans SpaCy.")
+    logger.info("Les vecteurs GloVe sont bien chargés dans SpaCy.")
 
 # Création du traducteur Google Translate
 translator = Translator()
 
 
+
 def detect_language(text):
-    """
-    Détecte la langue d'un texte avec langid.
-    """
     try:
         lang, _ = langid.classify(text)
         return lang
@@ -93,14 +81,13 @@ def detect_language(text):
         raise ValueError(f"Langue non prise en charge : {str(e)}")
 
 
+
 def translate_to_english(text, lang):
-    """
-    Traduit un texte vers l'anglais si nécessaire.
-    """
     if lang != "en":
         translated = translator.translate(text, src=lang, dest="en")
         return translated.text
     return text
+
 
 
 class PlaylistService:
@@ -154,24 +141,18 @@ class PlaylistService:
         similar_tags = []
         input_vector = SPACY_MODEL(translated_input.lower())
 
-        # Vérifier si le vecteur existe
         if not input_vector.has_vector:
             print(f"Le mot '{translated_input}' n'a pas de vecteur.")
             return []
 
-        # Seuils de similarité
-        seuils = [0.7, 0.6, 0.5]  # Teste plusieurs seuils pour plus de flexibilité
+        seuils = [0.7, 0.6, 0.5]
 
         for seuil in seuils:
             for tag in tags:
-                # Nettoyer et découper les tags composés
                 tag_words = tag.replace(" ", "").split(",")
-
-                # Comparaison de chaque mot dans le tag
                 for word in tag_words:
                     tag_vector = SPACY_MODEL(word.lower())
 
-                    # Vérifier si le vecteur existe
                     if not tag_vector.has_vector:
                         continue
 
@@ -179,11 +160,57 @@ class PlaylistService:
 
                     if similarity > seuil:
                         similar_tags.append(tag)
-                        break  # Dès qu'un mot est similaire, passer au tag suivant
+                        break
 
-            # Si des tags sont trouvés, arrêter les tests
             if similar_tags:
                 break
 
         print(f"Tags similaires trouvés : {similar_tags}")
         return similar_tags
+
+    @staticmethod
+    def consume_and_publish(message):
+        """
+        Fonction pour récupérer le message de la queue, générer la playlist, et publier le résultat.
+        """
+
+
+        try:
+            # Décoder le message reçu (en supposant que le message est au format JSON)
+            playlist_request = json.loads(message)
+            print(f"Message reçu : {playlist_request}")
+
+            # Extraire les informations nécessaires
+            job_id = playlist_request.get('id')
+            user_id = playlist_request.get('userId')
+            data = playlist_request.get('data')
+            keywords = data.get('tags')
+            name = data.get('name')
+            description = data.get('description')
+
+            # Vérifie si les champs obligatoires sont présents
+            if not job_id or not user_id:
+                raise ValueError("Les champs 'id' et 'userId' sont obligatoires dans le message.")
+            csv_file = "app/playlist/music_tags_realistic.csv"
+
+            # Générer la playlist
+            playlist_end_job = PlaylistService.generate_playlist(
+                csv_file, keywords, name, description, job_id=job_id, user_id=user_id
+            )
+
+            stomp = controllers.stomp
+
+            logger.info(f"Playlist générée : {playlist_end_job}")
+
+            # Publier le résultat dans la queue cible
+            stomp.send_message(
+                "com.jamify.orchestrator.playlist-done",
+                json.dumps(playlist_end_job)
+            )
+
+            logger.info(f"Message envoyé à la queue 'com.jamify.orchestrator.playlist-done': {playlist_end_job}")
+
+        except json.JSONDecodeError:
+            print(f"Erreur de décodage JSON pour le message : {message}")
+        except Exception as e:
+            print(f"Erreur lors du traitement du message : {e}")
