@@ -2,7 +2,7 @@ import os
 import requests
 import spacy
 import json
-import panda as pd
+import pandas as pd
 import langid
 from googletrans import Translator
 
