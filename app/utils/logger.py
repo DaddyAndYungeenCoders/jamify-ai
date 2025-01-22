@@ -29,7 +29,7 @@ import colorlog
 
 def setup_logger():
     log = logging.getLogger('jamify-ai')
-    log.setLevel(logging.INFO)
+    log.setLevel(logging.DEBUG)
     handler = logging.StreamHandler()
     log_format = '%(log_color)s%(asctime)s-%(name)s-%(funcName)s-%(levelname)s: %(message)s'
     log_colors = {

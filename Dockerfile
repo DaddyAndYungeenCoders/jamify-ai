@@ -8,7 +8,6 @@ RUN mkdir "/repo"
 COPY ./requirements.txt /repo
 COPY ./run.py /repo
 COPY ./app /repo/app
-COPY ./models /repo/models
 
 
 WORKDIR /repo
