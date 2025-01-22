@@ -1,11 +1,25 @@
+#  Copyright (c) 2024, LAPETITTE Matthieu
+#  Tous droits réservés.
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
+
 import os
+
+import langid
+import pandas as pd
 import requests
 import spacy
 from googletrans import Translator
-import pandas as pd
-import langid
-from flask import jsonify
-from app.utils.constants import SPACY_MODEL_NAME, TAG_FIELD
+
+from app.utils.constants import TAG_FIELD
 
 # URL du bucket S3 contenant les vecteurs SpaCy
 S3_BASE_URL = "https://jamifybucket.s3.eu-north-1.amazonaws.com/glove_vectors"
@@ -23,20 +37,21 @@ GLOVE_VECTOR_FILES = [
     "vocab/vectors.cfg",
 ]
 
+
 def download_glove_vectors(base_url, target_dir, files):
     """
     Télécharge les fichiers nécessaires depuis un bucket S3.
     """
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
-    
+
     for file_name in files:
         file_url = f"{base_url}/{file_name}"
         local_file_path = os.path.join(target_dir, file_name.replace("/", os.sep))
-        
+
         # Créer les sous-dossiers si nécessaire
         os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
-        
+
         if not os.path.exists(local_file_path):
             print(f"Téléchargement de {file_name}...")
             response = requests.get(file_url, stream=True)
@@ -49,6 +64,7 @@ def download_glove_vectors(base_url, target_dir, files):
                 raise RuntimeError(f"Impossible de télécharger {file_name}. Erreur {response.status_code}.")
         else:
             print(f"{file_name} est déjà présent.")
+
 
 # Télécharger tous les fichiers nécessaires
 download_glove_vectors(S3_BASE_URL, SPACY_MODEL_DIR, GLOVE_VECTOR_FILES)
@@ -65,6 +81,7 @@ else:
 # Création du traducteur Google Translate
 translator = Translator()
 
+
 def detect_language(text):
     """
     Détecte la langue d'un texte avec langid.
@@ -75,6 +92,7 @@ def detect_language(text):
     except Exception as e:
         raise ValueError(f"Langue non prise en charge : {str(e)}")
 
+
 def translate_to_english(text, lang):
     """
     Traduit un texte vers l'anglais si nécessaire.
@@ -83,6 +101,7 @@ def translate_to_english(text, lang):
         translated = translator.translate(text, src=lang, dest="en")
         return translated.text
     return text
+
 
 class PlaylistService:
     @staticmethod

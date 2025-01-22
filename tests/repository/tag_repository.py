@@ -60,6 +60,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 import os
 import unittest
 from unittest.mock import MagicMock
@@ -157,10 +167,10 @@ class TestTagRepository(unittest.TestCase):
 
     def test_add_link_music_tag_new_tag(self):
         # Préparation des données de test
-        self.mock_conn.cursor.return_value.__enter__.return_value.fetchone.side_effect = [None, (
-        1, "NewTag",)]  # Tag non trouvé
-        self.mock_conn.cursor.return_value.__enter__.return_value.execute.return_value = (
-        1,)  # Simule l'insertion réussie
+        # Tag non trouvé
+        self.mock_conn.cursor.return_value.__enter__.return_value.fetchone.side_effect = [None, (1, "NewTag",)]
+        # Simule l'insertion réussie
+        self.mock_conn.cursor.return_value.__enter__.return_value.execute.return_value = (1,)
 
         # Appel de la méthode
         self.tag_repo.add_link_music_tag(1, "NewTag")

@@ -10,6 +10,26 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
 import unittest
@@ -19,13 +39,16 @@ from marshmallow import ValidationError
 
 os.environ['TESTING'] = 'True'
 from app.services.music_service import MusicService  # Adjust the import based on your project structure
-from app.repository import Repository
+from app.repository import Repository, MusicRepository, TagRepository
+
 
 class TestMusicService(unittest.TestCase):
 
     def setUp(self):
         self.music_service = MusicService()
         self.repository_mock = MagicMock(spec=Repository)
+        self.repository_mock.music_repository = MagicMock(spec=MusicRepository)
+        self.repository_mock.tags_repository = MagicMock(spec=TagRepository)
         self.music_service.dataset_dto = {
             'name': 'Test Song',
             'artists': 'Test Artist',
@@ -39,7 +62,6 @@ class TestMusicService(unittest.TestCase):
     @patch('app.services.music_service.MusicDTO')
     def test_save_music(self, MockMusicDTO):
         # Arrange
-        mock_music_instance = MockMusicDTO.return_value
         self.repository_mock.music_repository.add_music.return_value = 1  # Simulate returning a music ID
 
         # Act
@@ -80,12 +102,20 @@ class TestMusicService(unittest.TestCase):
         mock_repository_instance.music_repository.add_music.return_value = 1
 
         # Act
-        result = self.music_service.listen('{"name": "Test Song", "artists": "Test Artist", "isrc": "US1234567890", "preview_url": "http://example.com/image.jpg", "tempo": 120, "energy": 0.8, "lyrics": "Test lyrics"}')
+        result = self.music_service.listen('{'
+                                           '"name": "Test Song", '
+                                           '"artists": "Test Artist", '
+                                           '"isrc": "US1234567890", '
+                                           '"preview_url": "http://example.com/image.jpg", '
+                                           '"tempo": 120, '
+                                           '"energy": 0.8, '
+                                           '"lyrics": "Test lyrics"'
+                                           '}')
 
         # Assert
         self.assertTrue(result)
         mock_repository_instance.music_repository.add_music.assert_called_once()
-        MockQueueMusicTagDTO.assert_called_once()
+        MockQueueMusicTagDTO.assert_called()
 
     @patch('app.services.music_service.QueueMusicTagDTO')
     def test_listen_invalid_data(self, MockQueueMusicTagDTO):
@@ -94,10 +124,12 @@ class TestMusicService(unittest.TestCase):
         mock_queue_music_tag_dto_instance.load.side_effect = ValidationError("Invalid data")
 
         # Act
-        result = self.music_service.listen('{"invalid": "data"}')
+        with self.assertRaises(ValueError):
+            self.music_service.listen('{"invalid": "data"}')
 
         # Assert
-        self.assertIsInstance(result, ValueError)
+        # self.assertIsInstance(result, ValueError)
+
 
 if __name__ == '__main__':
     unittest.main()

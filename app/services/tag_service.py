@@ -20,6 +20,26 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
 import zipfile
@@ -165,7 +185,6 @@ class TagService:
             logger.error(f"Erreur lors de l'extraction : {e}")
         pass
 
-
     def _check_tag_match(
             self,
             music_data,
@@ -201,7 +220,8 @@ class TagService:
         try:
             tags = self.generate_tags(music_data)
         except Exception as e:
-            logger.warn(e)
+            logger.warning(e)
+            return None
         # Ajouter les tags au morceau
         logger.info(f"Ajout des tags {tags} au morceau {music_id}")
         for tag in tags:
@@ -209,6 +229,3 @@ class TagService:
                 self.tag_repository.add_link_music_tag(music_id, str(tag))
             except Exception as e:
                 logger.error(f"Erreur lors de l'ajout du tag {tag}: {e}")
-
-
-
