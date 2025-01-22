@@ -2,13 +2,10 @@
 #  Tous droits réservés.
 
 from app import controllers
-from .data_service import DataService
 from .music_service import MusicService
 from .playlist_service import PlaylistService
 
 music = MusicService()
-def ml_service():
-    return None
 
 
 def startlistener():

@@ -30,6 +30,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 import os
 from urllib.parse import urlparse
@@ -68,7 +78,6 @@ class DataService:
             logger.error(f"Processing error: {e}")
 
         pass
-
 
     @staticmethod
     def is_csv(file_path):
@@ -111,8 +120,8 @@ class DataService:
 
             merged_dataframes = []
 
-            #for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
-                # Merge des chunks
+            # for chunk1, chunk2 in zip(df1_chunks, df2_chunks):
+            # Merge des chunks
             merged_chunk = pd.merge(
                 df1_chunks,
                 df2_chunks,
@@ -139,27 +148,22 @@ class DataService:
         :param merged_df: DataFrame mergé à envoyer
         """
         try:
-            #commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
+            # commit = StompMultipleSend(self.stomp_controller.connection, "com.jamify.ai.tag-gen")
 
             # Envoi ligne par ligne
             with self.stomp_controller.create_transaction("com.jamify.ai.tag-gen") as transaction:
                 for _, row in merged_df.iterrows():
                     transaction.send(row.to_json())
-                    #commit.send(row.to_json())
-                    #self.stomp_controller.send_message("com.jamify.ai.tag-gen",row.to_json())
+                    # commit.send(row.to_json())
+                    # self.stomp_controller.send_message("com.jamify.ai.tag-gen",row.to_json())
                     pass
 
             # Commit de la transaction
-            #del commit
+            # del commit
             logger.info("All messages sent and committed successfully")
 
         except Exception as e:
             logger.error(f"STOMP send error: {e}")
-
-
-
-
-
 
 
 class CsvFile:

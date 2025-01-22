@@ -40,6 +40,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 from datetime import datetime
 
 from marshmallow import fields, Schema, post_load
@@ -95,7 +105,7 @@ class QueueMusicTagDTO(Schema):
                     data[field] = int(data[field])
                 except ValueError:
                     data[field] = None
-    
+
         # Assign 'track_id' to 'id' if 'id' is null
         if not data.get('id') and data.get('track_id'):
             data['id'] = data['track_id']
@@ -104,6 +114,12 @@ class QueueMusicTagDTO(Schema):
         if not data.get('name') and data.get('track_title'):
             data['name'] = data['track_title']
 
+        data = QueueMusicTagDTO.artist_preprocess(data)
+
+        return data
+
+    @staticmethod
+    def artist_preprocess(data):
         # Assign 'track_id' to 'id' if 'id' is null
         if not data.get('artists'):
             data['artists'] = "unknown"
@@ -118,9 +134,4 @@ class QueueMusicTagDTO(Schema):
             except Exception as e:
                 logger.error(f"Erreur lors de la conversion de 'artists': {e}")
                 data['artists'] = "unknown"  # Valeur par défaut en cas d'erreur
-        elif isinstance(data['artists'], str):
-            # Si ce n'est pas une liste, on peut simplement garder la chaîne
-            data['artists'] = data['artists']
-
-
         return data

@@ -40,6 +40,16 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
+#
+#  Ce fichier est soumis aux termes de la licence suivante :
+#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
+#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
+#
+#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
+#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
+#
+#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
+#  matthieu@lapetitte.fr
 
 
 import psycopg2
@@ -96,7 +106,7 @@ class TagRepository:
         sql = """SELECT tag_id, tag_label FROM tag"""
         return self.private_get_tag(sql, "")
 
-    def add_tag(self, label: str)-> TagDTO:
+    def add_tag(self, label: str) -> TagDTO:
         sql = """INSERT INTO tag(tag_label) VALUES(%s) RETURNING tag_id, tag_label"""
         tag_id = None
         try:

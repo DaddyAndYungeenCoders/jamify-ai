@@ -1,9 +1,9 @@
-import json
-
-import langid
-import pandas as pd
+import os
+import requests
 import spacy
 from googletrans import Translator
+
+from app.utils.constants import TAG_FIELD
 
 from app import controllers
 from app.utils.constants import TAG_FIELD
@@ -69,6 +69,7 @@ else:
 translator = Translator()
 
 
+
 def detect_language(text):
     try:
         lang, _ = langid.classify(text)
@@ -77,11 +78,13 @@ def detect_language(text):
         raise ValueError(f"Langue non prise en charge : {str(e)}")
 
 
+
 def translate_to_english(text, lang):
     if lang != "en":
         translated = translator.translate(text, src=lang, dest="en")
         return translated.text
     return text
+
 
 
 class PlaylistService:

@@ -10,26 +10,7 @@
 #
 #  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
 #  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
-#
-#  Ce fichier est soumis aux termes de la licence suivante :
-#  Vous êtes autorisé à utiliser, modifier et distribuer ce code sous réserve des conditions de la licence.
-#  Vous ne pouvez pas utiliser ce code à des fins commerciales sans autorisation préalable.
-#
-#  Ce fichier est fourni "tel quel", sans garantie d'aucune sorte, expresse ou implicite, y compris mais sans s'y limiter,
-#  les garanties implicites de qualité marchande ou d'adaptation à un usage particulier.
-#
-#  Pour toute question ou demande d'autorisation, contactez LAPETITTE Matthieu à l'adresse suivante :
-#  matthieu@lapetitte.fr
+
 import json
 import os
 import queue
@@ -59,10 +40,10 @@ class StompListener(stomp.ConnectionListener):
 
                     subscriber['listener'](body)
                 except Exception as e:
-                    self.connection.connection.nack(frame.headers['message-id'], subscriber['destination'] )
-                    logger.warning(f"Erreur detect on dequeue : {e}")
+                    logger.warning(f"data error found in message : {e}")
+                    self.connection.connection.nack(frame.headers['message-id'], subscriber['destination'])
                     break
-                self.connection.connection.ack(frame.headers['message-id'], subscriber['destination'] )
+                self.connection.connection.ack(frame.headers['message-id'], subscriber['destination'])
                 break
         pass
 
@@ -411,7 +392,6 @@ class AdvancedStompTransaction:
         # Unsubscibe to queue
         self.stomp_client.connection.unsubscribe(destination)
 
-
     def _validate_message(self, body: Any) -> bytes:
         """
         Validation et préparation du message
@@ -446,8 +426,7 @@ class AdvancedStompTransaction:
                 message_size = len(message_bytes)
 
                 # Vérification des limites
-                if (self.message_count >= self.max_messages or
-                        self.total_memory_used + message_size > self.max_memory_limit):
+                if self.message_count >= self.max_messages or self.total_memory_used + message_size > self.max_memory_limit:
                     # Auto-commit si les limites sont atteintes
                     self.commit()
                     time.sleep(1)
@@ -477,7 +456,7 @@ class AdvancedStompTransaction:
 
             except Exception as e:
                 logger.error(f"Erreur d'envoi de message: {e}")
-                self._handle_error()
+                self._handle_error(e)
 
     def commit(self):
         """
@@ -504,7 +483,7 @@ class AdvancedStompTransaction:
             logger.error(f"Erreur de commit: {e}")
             self._handle_error()
 
-    def _handle_error(self):
+    def _handle_error(self, e: Optional[Exception] = None):
         """
         Gestion centralisée des erreurs
         """
@@ -516,6 +495,8 @@ class AdvancedStompTransaction:
 
         # Réinitialisation
         self._reset()
+        if e:
+            raise e
 
     def _reset(self):
         """
@@ -544,7 +525,6 @@ class AdvancedStompTransaction:
             self.stomp_client._resubscribe_all()
         except Exception:
             self._handle_error()
-
 
 
 class Subscriber:
