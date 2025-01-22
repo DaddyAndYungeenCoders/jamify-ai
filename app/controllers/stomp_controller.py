@@ -39,6 +39,7 @@ import time
 from typing import Any, List, Optional, Dict, Callable, Union
 
 import stomp
+
 from app.utils.logger import logger
 
 
@@ -51,12 +52,11 @@ class StompListener(stomp.ConnectionListener):
 
     def on_message(self, frame):
         body = frame.body
-        logger.debug('received a message : "%s"' % body)
 
         for subscriber in self.connection.subscribers:
             if subscriber['destination'] == str(frame.headers['subscription']):
                 try:
-                    
+
                     subscriber['listener'](body)
                 except Exception as e:
                     self.connection.connection.nack(frame.headers['message-id'], subscriber['destination'] )

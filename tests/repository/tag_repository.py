@@ -121,8 +121,8 @@ class TestTagRepository(unittest.TestCase):
 
     def test_add_tag_success(self):
         # Préparation des données de test
-        self.mock_conn.cursor.return_value.__enter__.return_value.fetchone.return_value = (
-        1, "Test",)  # Simule un ID retourné
+        self.mock_conn.cursor.return_value.__enter__.return_value.fetchone.return_value = (1, "Test",)
+        # Simule un ID retourné
 
         # Appel de la méthode
         tag = self.tag_repo.add_tag("NewTag")
