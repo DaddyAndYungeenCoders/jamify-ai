@@ -1,6 +1,7 @@
 import os
 import requests
 import spacy
+import json
 from googletrans import Translator
 
 from app.utils.constants import TAG_FIELD
