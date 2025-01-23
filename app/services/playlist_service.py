@@ -245,11 +245,11 @@ class PlaylistService:
 
             # Publier le résultat dans la queue cible
             stomp.send_message(
-                "com.jamify.orchestrator.playlist-done",
+                "jamify.orchestrator.playlist-done",
                 json.dumps(playlist_end_job)
             )
 
-            logger.info(f"Message envoyé à la queue 'com.jamify.orchestrator.playlist-done': {playlist_end_job}")
+            logger.info(f"Message envoyé à la queue 'jamify.orchestrator.playlist-done': {playlist_end_job}")
 
         except json.JSONDecodeError:
             logger.error(f"Erreur de décodage JSON pour le message : {message}")

@@ -11,5 +11,5 @@ music = MusicService()
 def startlistener():
     stomp = controllers.stomp
     stomp.add_subscriber('com.jamify.ai.tag-gen', music.listen)
-    stomp.add_subscriber('com.jamify.ai.playlist-gen', PlaylistService.consume_and_publish)
+    stomp.add_subscriber('jamify.ai.playlist-gen', PlaylistService.consume_and_publish)
     return None
