@@ -1,0 +1,75 @@
+openapi: 3.0.3
+info:
+  title: Music tagger - OpenAPI 3.0
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://localhost
+tags:
+  - name: tagger
+    description: Tag some music
+paths:
+  /tag:
+    post:
+      tags:
+        - tagger
+      summary: Add some new music
+      description: Add some new music with tag
+      operationId: addMusic
+      requestBody:
+        description: Send New music
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tagpost'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+      security:
+        - petstore_auth:
+            - write:tag
+            - read:tag
+  
+components:
+  schemas:
+    tagpost:
+      required:
+        - url
+        - header
+      type: array
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            example: https://tryagain/
+          spotid:
+            type: string
+            example: id
+            description: column name of spotify id (link column)
+          header:
+            type: array
+            items:
+              type: string
+              example: id_spot
+
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://localhost/oauth/authorize
+          scopes:
+            write:tag: post music on system
+            read:tag: default security
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
